@@ -4,7 +4,7 @@ const axios = require('axios');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // زيادة الحد لدعم الصور بصيغة base64
 
 // API Keys
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "sk-15274d6644964070bea6a822b32baaf4";
@@ -14,11 +14,12 @@ const TOAPIS_API_KEY = process.env.TOAPIS_API_KEY || "sk-XfnLsW3FKcDnfyfHQvQmHUc
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 const TOAPIS_BASE_URL = "https://toapis.com/v1";
 
-// ==================== TEXT GENERATION ENDPOINT ====================
+// ==================== TEXT & VISION ENDPOINT ====================
 app.post('/api/chat', async (req, res) => {
     try {
-        const { messages, model } = req.body;
+        const { messages } = req.body;
         
+        // DeepSeek V3/V4 supports vision and file analysis through multimodal messages
         const response = await axios.post(DEEPSEEK_API_URL, {
             model: "deepseek-chat",
             messages: messages,
@@ -40,7 +41,7 @@ app.post('/api/chat', async (req, res) => {
 // ==================== IMAGE GENERATION ENDPOINT ====================
 app.post('/api/image', async (req, res) => {
     try {
-        const { prompt, size = "1:1", resolution = "1K", n = 1 } = req.body;
+        const { prompt, size = "1:1", resolution = "1K", n = 1, reference_images = [] } = req.body;
 
         if (!prompt) {
             return res.status(400).json({ error: 'Prompt is required' });
@@ -55,6 +56,7 @@ app.post('/api/image', async (req, res) => {
                 size: size,
                 resolution: resolution,
                 n: n,
+                reference_images: reference_images, // Support for Image-to-Image if provided
                 response_format: "url"
             },
             {
@@ -66,17 +68,12 @@ app.post('/api/image', async (req, res) => {
         );
 
         const taskId = response.data.id;
-        
-        // Poll for task completion
         const imageUrl = await pollImageTask(taskId);
         
         res.json({
             success: true,
-            taskId: taskId,
             imageUrl: imageUrl,
-            prompt: prompt,
-            size: size,
-            resolution: resolution
+            taskId: taskId
         });
 
     } catch (error) {
@@ -106,53 +103,18 @@ async function pollImageTask(taskId, maxAttempts = 60, interval = 2000) {
                 throw new Error(`Image generation failed: ${error?.message || 'Unknown error'}`);
             }
 
-            // Wait before next poll
             await new Promise(resolve => setTimeout(resolve, interval));
-
         } catch (error) {
-            if (error.message.includes('Image generation failed')) {
-                throw error;
-            }
-            console.error(`Poll attempt ${attempt + 1} failed:`, error.message);
+            if (error.message.includes('Image generation failed')) throw error;
         }
     }
-
-    throw new Error('Image generation timeout - task did not complete within 120 seconds');
+    throw new Error('Image generation timeout');
 }
-
-// ==================== GET IMAGE TASK STATUS ENDPOINT ====================
-app.get('/api/image/status/:taskId', async (req, res) => {
-    try {
-        const { taskId } = req.params;
-
-        const response = await axios.get(
-            `${TOAPIS_BASE_URL}/images/generations/${taskId}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${TOAPIS_API_KEY}`
-                }
-            }
-        );
-
-        res.json(response.data);
-
-    } catch (error) {
-        console.error('Error fetching task status:', error.response ? error.response.data : error.message);
-        res.status(500).json({ error: 'Failed to fetch task status' });
-    }
-});
-
-// ==================== HEALTH CHECK ENDPOINT ====================
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'Afnan AI Backend is running' });
-});
 
 // ==================== START SERVER ====================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Afnan AI Backend is running on port ${PORT}`);
-    console.log(`✅ DeepSeek API configured`);
-    console.log(`✅ ToAPIs Image Generation configured`);
+    console.log(`🚀 Backend running on port ${PORT}`);
 });
 
 module.exports = app;

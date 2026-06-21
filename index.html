@@ -4,16 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Afnan AI</title>
-    
-    <!-- خطوط جوجل: خط Tajawal للواجهة الأساسية، وخط Noto Naskh للنصوص والمحادثات الطبيعية -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- مكتبة الأيقونات Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -21,64 +15,38 @@
                 extend: {
                     fontFamily: {
                         sans: ['Tajawal', 'sans-serif'],
-                        naskh: ['"Noto Naskh Arabic"', 'serif'], // خط النسخ الطبيعي
+                        naskh: ['"Noto Naskh Arabic"', 'serif'],
                     }
                 }
             }
         }
     </script>
-
     <style>
-        /* إخفاء شريط التمرير */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* حركات الانبثاق */
         .fade-in { animation: fadeIn 0.2s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* حركة النافذة السفلية */
-        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .slide-down { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
-
-        /* الشعار البسيط */
-        .afnan-logo-path {
-            stroke: #d1d5db;
-            stroke-width: 12;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* Loading Dots Animation */
         .dot { animation: dot-blink 1.4s infinite both; }
         .dot:nth-child(2) { animation-delay: 0.2s; }
         .dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes dot-blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+        .afnan-logo-path { stroke: #d1d5db; stroke-width: 12; fill: none; stroke-linecap: round; stroke-linejoin: round; }
     </style>
 </head>
 <body class="bg-white text-gray-800 h-[100dvh] flex flex-col overflow-hidden relative">
 
-    <!-- ================= الشريط العلوي النظيف جداً ================= -->
-    <header class="flex justify-between items-center px-4 py-3 z-30 relative bg-white">
-        <!-- زر القائمة الجانبية -->
+    <header class="flex justify-between items-center px-4 py-3 z-30 relative bg-white border-b border-gray-50">
         <button id="menuBtn" class="text-gray-700 hover:bg-gray-100 p-2 rounded-full transition">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <line x1="4" y1="8" x2="20" y2="8"></line>
                 <line x1="4" y1="16" x2="14" y2="16"></line>
             </svg>
         </button>
-
-        <!-- تم إخفاء النماذج من الواجهة لتكون بسيطة، وموجودة برمجياً في السكربت -->
-        <div class="flex-1"></div>
+        <div class="flex-1 text-center font-bold text-gray-400 text-sm">Afnan AI</div>
+        <div class="w-10"></div>
     </header>
 
-    <!-- ================= منطقة المحتوى الرئيسية ================= -->
     <main class="flex-1 relative overflow-hidden flex flex-col bg-white">
-        
-        <!-- شاشة الترحيب -->
         <div id="welcomeScreen" class="flex-1 flex flex-col items-center justify-center -mt-20 px-6 transition-opacity duration-300">
             <div class="relative w-24 h-24 mb-4 flex items-center justify-center opacity-60">
                 <svg viewBox="0 0 100 100" width="80" height="80">
@@ -86,106 +54,75 @@
                     <path class="afnan-logo-path" d="M60,50 C70,30 90,30 90,50" style="stroke: #bbf7d0;" />
                 </svg>
             </div>
-            <!-- اسم التطبيق بخط النسخ الأنيق -->
-            <h1 class="text-3xl font-naskh font-bold text-gray-300 tracking-wide">Afnan ai</h1>
+            <h1 class="text-3xl font-naskh font-bold text-gray-300 tracking-wide">Afnan AI</h1>
+            <p class="text-gray-400 mt-2 text-sm">كيف يمكنني مساعدتك اليوم؟</p>
         </div>
 
-        <!-- حاوية المحادثة -->
-        <div id="chatContainer" class="hidden flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-6 pb-32">
-            <!-- الرسائل تضاف هنا -->
-        </div>
-
+        <div id="chatContainer" class="hidden flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-6 pb-40"></div>
     </main>
 
-    <!-- ================= شريط الإدخال الرمادي ================= -->
     <div class="absolute bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent pt-8 pb-5 px-4 z-20">
         <div class="max-w-3xl mx-auto">
-            
-            <!-- المستطيل الرمادي للمحادثة -->
+            <!-- معاينة الملفات المرفوعة -->
+            <div id="filePreviewContainer" class="hidden flex flex-wrap gap-2 mb-2"></div>
+
             <div class="bg-gray-100 border border-gray-200 rounded-[28px] p-2.5 shadow-sm flex flex-col gap-2">
-                
-                <!-- حقل النص (بخط النسخ الطبيعي) -->
                 <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="w-full bg-transparent text-gray-900 font-naskh text-base placeholder-gray-400 outline-none px-3 py-1" autocomplete="off">
                 
-                <!-- شريط الأدوات الداخلي -->
                 <div class="flex items-center justify-between px-1">
-                    
-                    <!-- الأيقونات والخيارات (يمين) -->
                     <div class="flex items-center gap-1.5 relative">
-                        
-                        <!-- 1. أيقونة (+) للملفات والصور -->
-                        <button id="attachBtn" class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 hover:text-black transition">
+                        <button id="attachBtn" class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">
                             <i class="fa-solid fa-plus text-sm"></i>
                         </button>
-
-                        <!-- قائمة المرفقات المصغرة -->
-                        <div id="attachMenu" class="hidden absolute bottom-12 right-0 w-32 bg-white border border-gray-100 shadow-lg rounded-2xl p-1 z-30 fade-in">
-                            <button class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 text-sm font-medium text-gray-700">
-                                <span>صورة</span> <i class="fa-regular fa-image text-blue-500"></i>
-                            </button>
-                            <button class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 text-sm font-medium text-gray-700">
-                                <span>ملف</span> <i class="fa-solid fa-paperclip text-purple-500"></i>
-                            </button>
-                        </div>
+                        <input type="file" id="fileInput" class="hidden" multiple accept="image/*,.pdf,.txt,.doc,.docx">
                         
-                        <!-- 2. زر TXT (للنصوص) -->
-                        <button id="modeTxtBtn" class="bg-white text-black px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition border border-gray-200">
-                            TXT
-                        </button>
-
-                        <!-- 3. زر الصورة والمقاس (يفتح نافذة المقاسات) -->
+                        <button id="modeTxtBtn" class="bg-white text-black px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition border border-gray-200">TXT</button>
                         <button id="modeImgBtn" class="bg-transparent text-gray-500 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition">
                             <i class="fa-solid fa-image text-sm"></i>
                             <span id="ratioDisplay" class="mt-0.5">16:9</span>
                         </button>
                     </div>
-
-                    <!-- زر الإرسال (يسار) -->
-                    <button id="sendBtn" class="w-9 h-9 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center text-white transition flex-shrink-0 shadow-md">
+                    <button id="sendBtn" class="w-9 h-9 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center text-white transition shadow-md">
                         <i class="fa-solid fa-arrow-up text-sm"></i>
                     </button>
-
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ================= نافذة إعدادات أحجام الصور ================= -->
+    <!-- نافذة المقاسات -->
     <div id="ratioSheetBackdrop" class="hidden absolute inset-0 bg-black/40 z-40 transition-opacity"></div>
-    
     <div id="ratioSheet" class="hidden fixed bottom-0 left-0 right-0 bg-[#1e1e1e] rounded-t-[32px] z-50 p-6 shadow-2xl transform translate-y-full transition-transform duration-300">
         <div id="sheetHandle" class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6 cursor-pointer"></div>
         <div class="flex flex-col gap-4">
-            <span class="text-xs font-bold text-gray-400 text-right">اختر نسبة الأبعاد لـ GPT IMAGEN</span>
-            <div class="grid grid-cols-5 gap-2" id="ratioGrid">
-                <button class="ratio-option border-2 border-white bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="16:9">
-                    <div class="w-10 h-5 border-2 border-white bg-[#1e1e1e] rounded-sm transition-all"></div>
-                    <span class="text-[10px] font-bold text-white transition-all">16:9</span>
+            <span class="text-xs font-bold text-gray-400 text-right">اختر نسبة الأبعاد</span>
+            <div class="grid grid-cols-5 gap-2">
+                <button class="ratio-option border-2 border-white bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2" data-ratio="16:9">
+                    <div class="w-10 h-5 border-2 border-white bg-[#1e1e1e] rounded-sm"></div>
+                    <span class="text-[10px] font-bold text-white">16:9</span>
                 </button>
-                <button class="ratio-option border-2 border-transparent hover:border-gray-500 bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="9:16">
-                    <div class="w-5 h-10 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm transition-all"></div>
-                    <span class="text-[10px] font-bold text-gray-400 transition-all">9:16</span>
+                <button class="ratio-option border-2 border-transparent bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2" data-ratio="9:16">
+                    <div class="w-5 h-10 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm"></div>
+                    <span class="text-[10px] font-bold text-gray-400">9:16</span>
                 </button>
-                <button class="ratio-option border-2 border-transparent hover:border-gray-500 bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="1:1">
-                    <div class="w-7 h-7 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm transition-all"></div>
-                    <span class="text-[10px] font-bold text-gray-400 transition-all">1:1</span>
+                <button class="ratio-option border-2 border-transparent bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2" data-ratio="1:1">
+                    <div class="w-7 h-7 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm"></div>
+                    <span class="text-[10px] font-bold text-gray-400">1:1</span>
                 </button>
-                <button class="ratio-option border-2 border-transparent hover:border-gray-500 bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="3:2">
-                    <div class="w-9 h-6 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm transition-all"></div>
-                    <span class="text-[10px] font-bold text-gray-400 transition-all">3:2</span>
+                <button class="ratio-option border-2 border-transparent bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2" data-ratio="3:2">
+                    <div class="w-9 h-6 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm"></div>
+                    <span class="text-[10px] font-bold text-gray-400">3:2</span>
                 </button>
-                <button class="ratio-option border-2 border-transparent hover:border-gray-500 bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="2:3">
-                    <div class="w-6 h-9 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm transition-all"></div>
-                    <span class="text-[10px] font-bold text-gray-400 transition-all">2:3</span>
+                <button class="ratio-option border-2 border-transparent bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2" data-ratio="2:3">
+                    <div class="w-6 h-9 border-2 border-gray-500 bg-[#1e1e1e] rounded-sm"></div>
+                    <span class="text-[10px] font-bold text-gray-400">2:3</span>
                 </button>
             </div>
         </div>
-        <div class="h-6"></div>
     </div>
 
-    <!-- ================= الشريط الجانبي ================= -->
+    <!-- الشريط الجانبي -->
     <div id="sidebarBackdrop" class="hidden absolute inset-0 bg-black/20 z-40 transition-opacity"></div>
-    
     <div id="sidebar" class="fixed top-0 right-0 h-full w-[75%] max-w-sm bg-white transform translate-x-full z-50 flex flex-col shadow-2xl transition-transform duration-300">
         <div class="p-5 pt-8">
             <button id="newChatBtn" class="w-full flex items-center justify-center gap-3 bg-gray-50 rounded-xl py-3 border border-gray-100 text-gray-800 font-bold hover:bg-gray-100 transition shadow-sm">
@@ -194,85 +131,105 @@
             </button>
         </div>
         <div class="flex-1 overflow-y-auto no-scrollbar px-5 pt-2">
-            <h3 class="text-xs text-gray-400 font-bold mb-3 text-right border-b border-gray-100 pb-2">الأخيرة</h3>
+            <h3 class="text-xs text-gray-400 font-bold mb-3 text-right border-b border-gray-100 pb-2">المحادثات السابقة</h3>
             <div id="recentChatsList" class="flex flex-col gap-1"></div>
         </div>
         <div class="p-4 border-t border-gray-100 bg-gray-50/50">
             <div class="flex items-center gap-3 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
-                <div class="w-9 h-9 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">M</div>
+                <div class="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center font-bold">M</div>
                 <div class="flex flex-col text-right">
-                    <span class="font-bold text-sm text-gray-800">Mahmoud</span>
+                    <span class="font-bold text-sm text-gray-800">المستخدم</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ================= السكربت (JavaScript) للربط والتفاعلات ================= -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let currentMode = "text"; // "text" or "image"
+            let currentMode = "text";
             let selectedRatio = "16:9";
-            let chatHistory = [];
+            let attachedFiles = [];
+            let currentChatId = Date.now().toString();
+            let allChats = JSON.parse(localStorage.getItem('afnan_chats') || '{}');
+            let currentMessages = [];
 
             const chatInput = document.getElementById('chatInput');
-            const modeTxtBtn = document.getElementById('modeTxtBtn');
-            const modeImgBtn = document.getElementById('modeImgBtn');
-            const ratioDisplay = document.getElementById('ratioDisplay');
-            const attachBtn = document.getElementById('attachBtn');
-            const attachMenu = document.getElementById('attachMenu');
-            const sendBtn = document.getElementById('sendBtn');
-            const welcomeScreen = document.getElementById('welcomeScreen');
+            const fileInput = document.getElementById('fileInput');
+            const filePreviewContainer = document.getElementById('filePreviewContainer');
             const chatContainer = document.getElementById('chatContainer');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const sendBtn = document.getElementById('sendBtn');
+            const ratioSheet = document.getElementById('ratioSheet');
+            const ratioSheetBackdrop = document.getElementById('ratioSheetBackdrop');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            const recentChatsList = document.getElementById('recentChatsList');
 
-            function setMode(mode) {
-                currentMode = mode;
-                if(mode === 'text') {
-                    modeTxtBtn.className = "bg-white text-black px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition border border-gray-200";
-                    modeImgBtn.className = "bg-transparent text-gray-500 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition";
-                    chatInput.placeholder = "اكتب رسالتك...";
-                } else {
-                    modeImgBtn.className = "bg-white text-black px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold shadow-sm transition border border-gray-200";
-                    modeTxtBtn.className = "bg-transparent text-gray-500 px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold transition";
-                    chatInput.placeholder = "اكتب وصف الصورة...";
-                }
+            // --- إدارة الملفات ---
+            document.getElementById('attachBtn').onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        attachedFiles.push({
+                            name: file.name,
+                            type: file.type,
+                            data: event.target.result
+                        });
+                        renderFilePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            function renderFilePreviews() {
+                filePreviewContainer.innerHTML = '';
+                if (attachedFiles.length > 0) filePreviewContainer.classList.remove('hidden');
+                else filePreviewContainer.classList.add('hidden');
+
+                attachedFiles.forEach((file, index) => {
+                    const div = document.createElement('div');
+                    div.className = "relative bg-gray-100 rounded-lg p-2 text-xs flex items-center gap-2 border border-gray-200 fade-in";
+                    div.innerHTML = `
+                        <i class="${file.type.startsWith('image/') ? 'fa-regular fa-image text-blue-500' : 'fa-solid fa-file text-gray-500'}"></i>
+                        <span class="max-w-[100px] truncate">${file.name}</span>
+                        <button class="text-gray-400 hover:text-red-500" onclick="removeFile(${index})"><i class="fa-solid fa-xmark"></i></button>
+                    `;
+                    filePreviewContainer.appendChild(div);
+                });
             }
 
-            modeTxtBtn.onclick = () => setMode('text');
-            modeImgBtn.onclick = () => {
-                if(currentMode === "image") toggleRatioSheet(true);
+            window.removeFile = (index) => {
+                attachedFiles.splice(index, 1);
+                renderFilePreviews();
+            };
+
+            // --- إدارة الأوضاع ---
+            function setMode(mode) {
+                currentMode = mode;
+                document.getElementById('modeTxtBtn').className = mode === 'text' ? "bg-white text-black px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition border border-gray-200" : "bg-transparent text-gray-500 px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold transition";
+                document.getElementById('modeImgBtn').className = mode === 'image' ? "bg-white text-black px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold shadow-sm transition border border-gray-200" : "bg-transparent text-gray-500 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition";
+                chatInput.placeholder = mode === 'text' ? "اكتب رسالتك..." : "صف الصورة التي تريدها...";
+            }
+
+            document.getElementById('modeTxtBtn').onclick = () => setMode('text');
+            document.getElementById('modeImgBtn').onclick = () => {
+                if (currentMode === 'image') toggleRatioSheet(true);
                 else setMode('image');
             };
 
-            attachBtn.onclick = (e) => {
-                e.stopPropagation();
-                attachMenu.classList.toggle('hidden');
-            };
-
-            const ratioSheet = document.getElementById('ratioSheet');
-            const ratioSheetBackdrop = document.getElementById('ratioSheetBackdrop');
-            const sheetHandle = document.getElementById('sheetHandle');
-
             function toggleRatioSheet(show) {
-                if(show) {
-                    ratioSheetBackdrop.classList.remove('hidden');
-                    ratioSheet.classList.remove('hidden');
-                    setTimeout(() => ratioSheet.style.transform = "translateY(0)", 10);
-                } else {
-                    ratioSheet.style.transform = "translateY(100%)";
-                    setTimeout(() => {
-                        ratioSheet.classList.add('hidden');
-                        ratioSheetBackdrop.classList.add('hidden');
-                    }, 300);
-                }
+                ratioSheetBackdrop.classList.toggle('hidden', !show);
+                ratioSheet.classList.toggle('hidden', !show);
+                setTimeout(() => ratioSheet.style.transform = show ? "translateY(0)" : "translateY(100%)", 10);
             }
 
             ratioSheetBackdrop.onclick = () => toggleRatioSheet(false);
-            sheetHandle.onclick = () => toggleRatioSheet(false);
-
             document.querySelectorAll('.ratio-option').forEach(opt => {
                 opt.onclick = () => {
                     selectedRatio = opt.dataset.ratio;
-                    ratioDisplay.textContent = selectedRatio;
+                    document.getElementById('ratioDisplay').textContent = selectedRatio;
                     document.querySelectorAll('.ratio-option').forEach(el => {
                         el.classList.replace('border-white', 'border-transparent');
                         el.querySelector('span').classList.replace('text-white', 'text-gray-400');
@@ -281,94 +238,102 @@
                     opt.classList.replace('border-transparent', 'border-white');
                     opt.querySelector('span').classList.replace('text-gray-400', 'text-white');
                     opt.querySelector('div').classList.replace('border-gray-500', 'border-white');
-                    setTimeout(() => toggleRatioSheet(false), 200);
+                    toggleRatioSheet(false);
                 };
             });
 
-            const sidebar = document.getElementById('sidebar');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            const menuBtn = document.getElementById('menuBtn');
-
-            function toggleSidebar(show) {
-                if(show) {
-                    sidebarBackdrop.classList.remove('hidden');
-                    sidebar.style.transform = "translateX(0)";
-                } else {
-                    sidebar.style.transform = "translateX(100%)";
-                    setTimeout(() => sidebarBackdrop.classList.add('hidden'), 300);
-                }
-            }
-
-            menuBtn.onclick = () => toggleSidebar(true);
-            sidebarBackdrop.onclick = () => toggleSidebar(false);
-            window.onclick = () => attachMenu.classList.add('hidden');
-
+            // --- إرسال الرسائل ---
             sendBtn.onclick = async () => {
                 const text = chatInput.value.trim();
-                if(!text) return;
+                if (!text && attachedFiles.length === 0) return;
 
-                welcomeScreen.classList.add('opacity-0');
-                setTimeout(() => {
-                    welcomeScreen.classList.add('hidden');
-                    chatContainer.classList.remove('hidden');
-                }, 300);
+                welcomeScreen.classList.add('hidden');
+                chatContainer.classList.remove('hidden');
 
-                appendMessage('user', text);
+                const userMsg = { role: 'user', content: text, files: [...attachedFiles] };
+                appendMessage('user', text, attachedFiles);
+                currentMessages.push(userMsg);
+                
                 chatInput.value = "";
+                attachedFiles = [];
+                renderFilePreviews();
 
                 const loadingMsg = appendLoading();
 
                 try {
-                    if (currentMode === "text") {
-                        chatHistory.push({ role: "user", content: text });
+                    // تكامل ذكي: إذا طلب المستخدم صورة في وضع النص
+                    if (currentMode === 'text' && (text.includes("صورة") || text.includes("ارسم") || text.includes("توليد")) && !text.includes("حلل")) {
+                        loadingMsg.remove();
+                        appendMessage('bot', "حسناً، سأقوم بتوليد صورة لك. ما هو المقاس الذي تفضله؟ (يمكنك تغييره من أيقونة الصورة بالأسفل)");
+                        setMode('image');
+                        return;
+                    }
+
+                    if (currentMode === 'text') {
+                        // إعداد الرسائل لـ DeepSeek (دعم Vision)
+                        const apiMessages = currentMessages.map(m => {
+                            if (m.files && m.files.length > 0) {
+                                const content = [{ type: "text", text: m.content || "حلل هذه الملفات/الصور" }];
+                                m.files.forEach(f => {
+                                    if (f.type.startsWith('image/')) {
+                                        content.push({ type: "image_url", image_url: { url: f.data } });
+                                    } else {
+                                        content.push({ type: "text", text: `[File Attached: ${f.name}]` });
+                                    }
+                                });
+                                return { role: m.role, content: content };
+                            }
+                            return { role: m.role, content: m.content };
+                        });
+
                         const response = await fetch('/api/chat', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ messages: chatHistory })
+                            body: JSON.stringify({ messages: apiMessages })
                         });
                         const data = await response.json();
                         loadingMsg.remove();
-                        if (data.choices && data.choices[0]) {
-                            const botReply = data.choices[0].message.content;
-                            appendMessage('bot', botReply);
-                            chatHistory.push({ role: "assistant", content: botReply });
-                        } else {
-                            appendMessage('bot', "عذراً، حدث خطأ في الحصول على رد.");
-                        }
+                        const botReply = data.choices[0].message.content;
+                        appendMessage('bot', botReply);
+                        currentMessages.push({ role: 'assistant', content: botReply });
                     } else {
-                        // Image Mode
+                        // وضع الصورة
                         const response = await fetch('/api/image', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 prompt: text,
                                 size: selectedRatio,
-                                resolution: "1K"
+                                reference_images: attachedFiles.filter(f => f.type.startsWith('image/')).map(f => f.data)
                             })
                         });
                         const data = await response.json();
                         loadingMsg.remove();
-                        if (data.success && data.imageUrl) {
-                            appendImage('bot', data.imageUrl);
-                        } else {
-                            appendMessage('bot', "عذراً، فشل توليد الصورة. " + (data.error || ""));
-                        }
+                        if (data.success) appendImage('bot', data.imageUrl);
+                        else appendMessage('bot', "فشل توليد الصورة.");
                     }
+                    saveCurrentChat();
                 } catch (error) {
                     loadingMsg.remove();
-                    appendMessage('bot', "حدث خطأ في الاتصال بالخادم.");
-                    console.error(error);
+                    appendMessage('bot', "حدث خطأ في الاتصال.");
                 }
             };
 
-            function appendMessage(sender, text) {
+            function appendMessage(sender, text, files = []) {
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
                 const inner = document.createElement('div');
-                inner.className = sender === 'user' 
-                    ? "bg-gray-100 text-gray-800 px-4 py-2.5 rounded-[20px] rounded-tr-sm max-w-[85%] font-naskh text-base"
-                    : "text-gray-800 px-1 py-1 max-w-[90%] font-naskh text-lg leading-relaxed whitespace-pre-wrap";
-                inner.textContent = text;
+                inner.className = sender === 'user' ? "bg-gray-100 text-gray-800 px-4 py-2.5 rounded-[20px] rounded-tr-sm max-w-[85%] font-naskh text-base" : "text-gray-800 px-1 py-1 max-w-[90%] font-naskh text-lg leading-relaxed whitespace-pre-wrap";
+                
+                let contentHTML = "";
+                if (files.length > 0) {
+                    files.forEach(f => {
+                        if (f.type.startsWith('image/')) contentHTML += `<img src="${f.data}" class="max-w-full rounded-lg mb-2 border border-gray-200">`;
+                        else contentHTML += `<div class="bg-white/50 p-2 rounded mb-2 text-xs border border-gray-200"><i class="fa-solid fa-file mr-1"></i> ${f.name}</div>`;
+                    });
+                }
+                contentHTML += `<div>${text}</div>`;
+                inner.innerHTML = contentHTML;
                 msgDiv.appendChild(inner);
                 chatContainer.appendChild(msgDiv);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -376,43 +341,78 @@
 
             function appendImage(sender, url) {
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
-                const imgContainer = document.createElement('div');
-                imgContainer.className = "max-w-[85%] rounded-2xl overflow-hidden shadow-lg border border-gray-100";
-                
-                const img = document.createElement('img');
-                img.src = url;
-                img.className = "w-full h-auto block";
-                img.alt = "Generated Image";
-                
-                // Add download button
-                const downloadBtn = document.createElement('a');
-                downloadBtn.href = url;
-                downloadBtn.download = "afnan-ai-image.jpg";
-                downloadBtn.className = "block bg-white text-center py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 transition border-t border-gray-100";
-                downloadBtn.innerHTML = '<i class="fa-solid fa-download ml-1"></i> تحميل الصورة';
-                downloadBtn.target = "_blank";
-
-                imgContainer.appendChild(img);
-                imgContainer.appendChild(downloadBtn);
-                msgDiv.appendChild(imgContainer);
+                msgDiv.className = "flex justify-start fade-in mb-4";
+                msgDiv.innerHTML = `
+                    <div class="max-w-[85%] rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                        <img src="${url}" class="w-full h-auto block">
+                        <a href="${url}" target="_blank" class="block bg-white text-center py-2 text-xs font-bold text-gray-600 border-t border-gray-100"><i class="fa-solid fa-download ml-1"></i> تحميل الصورة</a>
+                    </div>
+                `;
                 chatContainer.appendChild(msgDiv);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
             function appendLoading() {
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `flex justify-start fade-in mb-4`;
-                const inner = document.createElement('div');
-                inner.className = "text-gray-400 px-1 py-1 font-naskh text-lg";
-                inner.innerHTML = '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
-                msgDiv.appendChild(inner);
+                msgDiv.className = "flex justify-start fade-in mb-4";
+                msgDiv.innerHTML = '<div class="text-gray-400 px-1 py-1 font-naskh text-lg"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>';
                 chatContainer.appendChild(msgDiv);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 return msgDiv;
             }
 
-            chatInput.onkeydown = (e) => { if(e.key === 'Enter') sendBtn.click(); };
+            // --- إدارة المحادثات ---
+            function saveCurrentChat() {
+                if (currentMessages.length === 0) return;
+                const title = currentMessages[0].content.substring(0, 30) + "...";
+                allChats[currentChatId] = { title, messages: currentMessages, date: new Date().toISOString() };
+                localStorage.setItem('afnan_chats', JSON.stringify(allChats));
+                renderRecentChats();
+            }
+
+            function renderRecentChats() {
+                recentChatsList.innerHTML = '';
+                Object.keys(allChats).sort((a, b) => b - a).forEach(id => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-right p-3 rounded-xl hover:bg-gray-50 text-sm text-gray-700 truncate transition border border-transparent hover:border-gray-100 mb-1";
+                    btn.innerHTML = `<i class="fa-regular fa-message ml-2 text-gray-400"></i> ${allChats[id].title}`;
+                    btn.onclick = () => loadChat(id);
+                    recentChatsList.appendChild(btn);
+                });
+            }
+
+            function loadChat(id) {
+                currentChatId = id;
+                currentMessages = allChats[id].messages;
+                chatContainer.innerHTML = '';
+                welcomeScreen.classList.add('hidden');
+                chatContainer.classList.remove('hidden');
+                currentMessages.forEach(m => {
+                    if (m.role === 'user') appendMessage('user', m.content, m.files || []);
+                    else appendMessage('bot', m.content);
+                });
+                toggleSidebar(false);
+            }
+
+            document.getElementById('newChatBtn').onclick = () => {
+                currentChatId = Date.now().toString();
+                currentMessages = [];
+                chatContainer.innerHTML = '';
+                welcomeScreen.classList.remove('hidden');
+                chatContainer.classList.add('hidden');
+                toggleSidebar(false);
+            };
+
+            function toggleSidebar(show) {
+                sidebarBackdrop.classList.toggle('hidden', !show);
+                sidebar.style.transform = show ? "translateX(0)" : "translateX(100%)";
+            }
+
+            document.getElementById('menuBtn').onclick = () => toggleSidebar(true);
+            sidebarBackdrop.onclick = () => toggleSidebar(false);
+
+            chatInput.onkeydown = (e) => { if (e.key === 'Enter') sendBtn.click(); };
+            renderRecentChats();
         });
     </script>
 </body>
