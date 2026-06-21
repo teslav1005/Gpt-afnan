@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Afnan AI - واجهة الدردشة</title>
+    <!-- استخدام النسخة المحلية من Tailwind و FontAwesome -->
+    <link rel="stylesheet" href="assets/css/tailwind.css">
+    <link rel="stylesheet" href="assets/css/fontawesome.css">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --user-msg-bg: #F4F4F4;
+            --bot-msg-bg: #FFFFFF;
+            --header-h: 64px;
+        }
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: white; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); background: var(--glass-bg); border: 1px solid var(--glass-border); }
+        .sidebar-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .animate-pop { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Chat Bubble Styles */
+        .msg-bubble { max-width: 85%; padding: 12px 16px; border-radius: 1.5rem; position: relative; animation: slideUp 0.3s ease-out; }
+        .msg-user { background: var(--user-msg-bg); align-self: flex-end; border-bottom-left-radius: 0.5rem; }
+        .msg-bot { background: var(--bot-msg-bg); align-self: flex-start; border-bottom-right-radius: 0.5rem; border: 1px solid #f0f0f0; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Attachment Preview */
+        .floating-preview { position: relative; width: 56px; height: 56px; background: white; border-radius: 10px; padding: 2px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border: 1px solid rgba(0,0,0,0.08); }
+        .floating-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .remove-btn { position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: 1.5px solid white; z-index: 10; }
+        
+        /* Menu Positions */
+        #mainAttachMenu { position: absolute; bottom: 65px; right: 0; width: 220px; z-index: 2000; border-radius: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        #modelDropdown { position: absolute; top: 100%; left: 0; margin-top: 8px; width: 192px; z-index: 1000; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        #contextMenu { position: fixed; z-index: 5000; display: none; min-width: 160px; }
+    </style>
+</head>
+<body class="antialiased text-gray-900 bg-white flex overflow-hidden">
+
+    <div id="overlay" class="fixed inset-0 bg-black/10 backdrop-blur-[2px] hidden transition-opacity duration-300 opacity-0" style="z-index: 100;"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-[#fcfcfc] border-r border-gray-100 flex flex-col transform -translate-x-full md:translate-x-0 sidebar-transition h-full shadow-sm md:shadow-none z-[150]">
+        <div class="p-4 flex flex-col gap-4">
+            <button id="newChatBtn" class="flex items-center gap-3 w-full bg-white border border-gray-100 p-3.5 rounded-2xl hover:bg-gray-50 transition-all shadow-sm active:scale-95">
+                <img src="assets/img/logo.png" alt="Logo" class="w-5 h-5">
+                <span class="font-bold text-gray-700 text-sm">محادثة جديدة</span>
+            </button>
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="historySearch" placeholder="بحث في المحادثات..." class="w-full bg-gray-100 border-none rounded-xl py-2 pr-9 pl-3 text-xs focus:ring-1 focus:ring-gray-200">
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto px-4 space-y-4 hide-scrollbar" id="historyList">
+            <div id="recentSection" class="space-y-1">
+                <p class="text-[10px] font-bold text-gray-400 px-2 mb-2">الأخيرة</p>
+                <div id="recentList" class="space-y-1">
+                    <div class="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-100 transition-all cursor-pointer text-sm text-gray-700">
+                        <p class="truncate font-bold text-xs">محادثة تجريبية</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-100 space-y-1 relative" id="profileSection">
+            <div id="profileTrigger" class="flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer hover:bg-gray-200/50 transition-all">
+                <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">A</div>
+                <div class="flex-1 min-w-0 text-right">
+                    <p class="text-xs font-bold truncate">المستخدم</p>
+                    <p class="text-[10px] text-gray-500 truncate">user@example.com</p>
+                </div>
+                <i class="fa-solid fa-ellipsis-vertical text-gray-300 text-xs"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 h-full relative">
+        <header class="h-[64px] flex items-center justify-between px-6 border-b border-gray-50 bg-white/80 backdrop-blur-md shrink-0 relative">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle" class="flex flex-col gap-1.5 p-1 md:hidden">
+                    <span class="w-6 h-0.5 bg-gray-600 rounded-full"></span>
+                    <span class="w-4 h-0.5 bg-gray-600 rounded-full"></span>
+                </button>
+            </div>
+
+            <div class="relative">
+                <button id="currentModelBtn" class="glass px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-white/90 transition-all">
+                    <span id="activeModelName">Afnan-Fishe</span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                </button>
+                <div id="modelDropdown" class="glass hidden p-1.5 space-y-0.5 animate-pop overflow-hidden">
+                    <div onclick="selectModel('Afnan-Fishe')" class="p-3 hover:bg-white/50 rounded-xl cursor-pointer flex items-center justify-between transition-all">
+                        <span class="text-xs font-bold">Afnan-Fishe</span>
+                        <i class="fa-solid fa-fish text-blue-500 text-[10px]"></i>
+                    </div>
+                    <div onclick="selectModel('Afnan-Pro')" class="p-3 hover:bg-white/50 rounded-xl cursor-pointer flex items-center justify-between transition-all">
+                        <span class="text-xs font-bold">Afnan-Pro</span>
+                        <i class="fa-solid fa-star text-purple-500 text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div id="authButtons">
+                <button id="loginBtnHeader" onclick="location.href='login.html'" class="bg-black text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-gray-800 transition-all">تسجيل الدخول</button>
+            </div>
+        </header>
+
+        <div id="chatWindow" class="flex-1 overflow-y-auto hide-scrollbar scroll-smooth bg-white">
+            <div id="emptyView" class="min-h-full flex flex-col items-center justify-center text-center p-12 opacity-30 select-none">
+                <img src="assets/img/logo.png" class="w-20 h-20 mb-4 grayscale" alt="Logo">
+                <h2 class="text-2xl font-bold">Afnan ai</h2>
+            </div>
+            <div id="messageBox" class="max-w-4xl mx-auto p-4 md:p-8 flex flex-col gap-8"></div>
+        </div>
+
+        <div class="w-full bg-white p-4 md:p-8 pt-5 shrink-0 safe-pb">
+            <div class="max-w-3xl mx-auto relative">
+                <div id="inputContainer" class="bg-white border border-gray-200 rounded-[2.2rem] flex flex-col shadow-lg relative">
+                    <div id="attachmentPreview" class="px-4 pt-4 hidden flex-wrap gap-3 pb-3"></div>
+                    <div class="flex items-end gap-1.5 p-2 rounded-[2.2rem] relative">
+                        <div class="relative">
+                            <button id="mainAttachBtn" class="w-11 h-11 flex items-center justify-center rounded-full text-gray-900 bg-white shadow-sm cursor-pointer hover:shadow-md transition-all">
+                                <i class="fa-solid fa-plus text-lg"></i>
+                            </button>
+                            <div id="mainAttachMenu" class="glass hidden p-1.5 space-y-0.5 animate-pop">
+                                <div onclick="document.getElementById('imageInput').click()" class="attach-item p-2.5 hover:bg-white/50 rounded-2xl cursor-pointer flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-700">إرفاق صور</span>
+                                    <div class="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center"><i class="fa-solid fa-image text-blue-500 text-xs"></i></div>
+                                </div>
+                                <div onclick="document.getElementById('fileInput').click()" class="attach-item p-2.5 hover:bg-white/50 rounded-2xl cursor-pointer flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-700">إرفاق ملفات</span>
+                                    <div class="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center"><i class="fa-solid fa-paperclip text-purple-500 text-xs"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <input type="file" id="fileInput" class="hidden">
+                        <textarea id="chatInput" rows="1" placeholder="اسأل Afnan ai..." class="flex-1 bg-transparent border-none focus:ring-0 py-4 px-3 text-[16px] resize-none max-h-40 hide-scrollbar" dir="auto"></textarea>
+                        <button id="sendBtn" class="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center active:scale-90 transition-all"><i class="fa-solid fa-arrow-up"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // UI Elements
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const currentModelBtn = document.getElementById('currentModelBtn');
+        const modelDropdown = document.getElementById('modelDropdown');
+        const mainAttachBtn = document.getElementById('mainAttachBtn');
+        const mainAttachMenu = document.getElementById('mainAttachMenu');
+        const chatInput = document.getElementById('chatInput');
+        const messageBox = document.getElementById('messageBox');
+        const emptyView = document.getElementById('emptyView');
+        const imageInput = document.getElementById('imageInput');
+        const attachmentPreview = document.getElementById('attachmentPreview');
+
+        // Sidebar Toggle
+        sidebarToggle.onclick = () => {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            overlay.style.opacity = sidebar.classList.contains('-translate-x-full') ? '0' : '1';
+        };
+        
+        overlay.onclick = () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            overlay.style.opacity = '0';
+            modelDropdown.classList.add('hidden');
+            mainAttachMenu.classList.add('hidden');
+        };
+
+        // Model Selection
+        currentModelBtn.onclick = (e) => {
+            e.stopPropagation();
+            modelDropdown.classList.toggle('hidden');
+            mainAttachMenu.classList.add('hidden');
+        };
+
+        window.selectModel = (model) => {
+            document.getElementById('activeModelName').textContent = model;
+            modelDropdown.classList.add('hidden');
+        };
+
+        // Attachment Menu
+        mainAttachBtn.onclick = (e) => {
+            e.stopPropagation();
+            mainAttachMenu.classList.toggle('hidden');
+            modelDropdown.classList.add('hidden');
+        };
+
+        // Input Auto-resize
+        chatInput.oninput = () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = chatInput.scrollHeight + 'px';
+        };
+
+        // Handle Image Upload Preview
+        imageInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    attachmentPreview.innerHTML = `
+                        <div class="floating-preview animate-pop">
+                            <img src="${event.target.result}" alt="Preview">
+                            <button onclick="removeAttachment()" class="remove-btn"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    `;
+                    attachmentPreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+            mainAttachMenu.classList.add('hidden');
+        };
+
+        window.removeAttachment = () => {
+            attachmentPreview.innerHTML = '';
+            attachmentPreview.classList.add('hidden');
+            imageInput.value = '';
+        };
+
+        // Send Message Simulation
+        document.getElementById('sendBtn').onclick = () => {
+            const text = chatInput.value.trim();
+            if (text || imageInput.value) {
+                emptyView.style.display = 'none';
+                
+                // User Message
+                const userDiv = document.createElement('div');
+                userDiv.className = 'msg-bubble msg-user';
+                userDiv.textContent = text;
+                messageBox.appendChild(userDiv);
+                
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                removeAttachment();
+                
+                // Scroll to bottom
+                document.getElementById('chatWindow').scrollTop = document.getElementById('chatWindow').scrollHeight;
+            }
+        };
+
+        // Close menus on click outside
+        window.onclick = (e) => {
+            if (!e.target.closest('#currentModelBtn')) modelDropdown.classList.add('hidden');
+            if (!e.target.closest('#mainAttachBtn')) mainAttachMenu.classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
