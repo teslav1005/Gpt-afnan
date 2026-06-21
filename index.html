@@ -51,6 +51,12 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+
+        /* Loading Dots Animation */
+        .dot { animation: dot-blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dot-blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
     </style>
 </head>
 <body class="bg-white text-gray-800 h-[100dvh] flex flex-col overflow-hidden relative">
@@ -91,7 +97,7 @@
 
     </main>
 
-    <!-- ================= شريط الإدخال الرمادي (حسب طلبك الأخير) ================= -->
+    <!-- ================= شريط الإدخال الرمادي ================= -->
     <div class="absolute bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent pt-8 pb-5 px-4 z-20">
         <div class="max-w-3xl mx-auto">
             
@@ -144,16 +150,13 @@
         </div>
     </div>
 
-    <!-- ================= نافذة إعدادات أحجام الصور (الداكنة كما في الصورة 5944.jpg) ================= -->
+    <!-- ================= نافذة إعدادات أحجام الصور ================= -->
     <div id="ratioSheetBackdrop" class="hidden absolute inset-0 bg-black/40 z-40 transition-opacity"></div>
     
     <div id="ratioSheet" class="hidden fixed bottom-0 left-0 right-0 bg-[#1e1e1e] rounded-t-[32px] z-50 p-6 shadow-2xl transform translate-y-full transition-transform duration-300">
-        <!-- مقبض السحب لأسفل -->
         <div id="sheetHandle" class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6 cursor-pointer"></div>
-
         <div class="flex flex-col gap-4">
             <span class="text-xs font-bold text-gray-400 text-right">اختر نسبة الأبعاد لـ GPT IMAGEN</span>
-            
             <div class="grid grid-cols-5 gap-2" id="ratioGrid">
                 <button class="ratio-option border-2 border-white bg-[#2a2a2c] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 transition" data-ratio="16:9">
                     <div class="w-10 h-5 border-2 border-white bg-[#1e1e1e] rounded-sm transition-all"></div>
@@ -180,28 +183,20 @@
         <div class="h-6"></div>
     </div>
 
-    <!-- ================= الشريط الجانبي (بسيط جداً وخالي من الزحمة) ================= -->
+    <!-- ================= الشريط الجانبي ================= -->
     <div id="sidebarBackdrop" class="hidden absolute inset-0 bg-black/20 z-40 transition-opacity"></div>
     
     <div id="sidebar" class="fixed top-0 right-0 h-full w-[75%] max-w-sm bg-white transform translate-x-full z-50 flex flex-col shadow-2xl transition-transform duration-300">
-        
-        <!-- زر محادثة جديدة فقط -->
         <div class="p-5 pt-8">
             <button id="newChatBtn" class="w-full flex items-center justify-center gap-3 bg-gray-50 rounded-xl py-3 border border-gray-100 text-gray-800 font-bold hover:bg-gray-100 transition shadow-sm">
                 <i class="fa-solid fa-plus text-blue-500"></i>
                 <span>محادثة جديدة</span>
             </button>
         </div>
-
-        <!-- قائمة الأخيرة -->
         <div class="flex-1 overflow-y-auto no-scrollbar px-5 pt-2">
             <h3 class="text-xs text-gray-400 font-bold mb-3 text-right border-b border-gray-100 pb-2">الأخيرة</h3>
-            <div id="recentChatsList" class="flex flex-col gap-1">
-                <!-- محادثات سابقة -->
-            </div>
+            <div id="recentChatsList" class="flex flex-col gap-1"></div>
         </div>
-
-        <!-- معلومات المستخدم البسيطة بالأسفل -->
         <div class="p-4 border-t border-gray-100 bg-gray-50/50">
             <div class="flex items-center gap-3 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
                 <div class="w-9 h-9 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">M</div>
@@ -215,55 +210,44 @@
     <!-- ================= السكربت (JavaScript) للربط والتفاعلات ================= -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- متغيرات الباك إند (تعريفات النماذج) المخفية عن الواجهة العلوية ---
-            let internalModel = "deepseek-v4-flash"; // الافتراضي
-            let selectedRatio = "16:9";              // مقاس الصورة الافتراضي
+            let currentMode = "text"; // "text" or "image"
+            let selectedRatio = "16:9";
+            let chatHistory = [];
 
-            // --- عناصر الواجهة ---
             const chatInput = document.getElementById('chatInput');
             const modeTxtBtn = document.getElementById('modeTxtBtn');
             const modeImgBtn = document.getElementById('modeImgBtn');
             const ratioDisplay = document.getElementById('ratioDisplay');
             const attachBtn = document.getElementById('attachBtn');
             const attachMenu = document.getElementById('attachMenu');
+            const sendBtn = document.getElementById('sendBtn');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const chatContainer = document.getElementById('chatContainer');
 
-            // --- التبديل بين وضع النص (TXT) و وضع الصورة ---
             function setMode(mode) {
+                currentMode = mode;
                 if(mode === 'text') {
-                    internalModel = "deepseek-v4-flash";
-                    // ستايل زر TXT نشط
                     modeTxtBtn.className = "bg-white text-black px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition border border-gray-200";
-                    // ستايل زر الصورة غير نشط
                     modeImgBtn.className = "bg-transparent text-gray-500 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition";
                     chatInput.placeholder = "اكتب رسالتك...";
                 } else {
-                    internalModel = "GPT IMAGEN 2";
-                    // ستايل زر الصورة نشط
                     modeImgBtn.className = "bg-white text-black px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold shadow-sm transition border border-gray-200";
-                    // ستايل زر TXT غير نشط
                     modeTxtBtn.className = "bg-transparent text-gray-500 px-3.5 py-1.5 rounded-full flex items-center justify-center text-xs font-bold transition";
                     chatInput.placeholder = "اكتب وصف الصورة...";
                 }
             }
 
             modeTxtBtn.onclick = () => setMode('text');
-            modeImgBtn.onclick = (e) => {
-                if(internalModel === "GPT IMAGEN 2") {
-                    // إذا كان مفعلاً أصلاً، نفتح نافذة المقاسات
-                    toggleRatioSheet(true);
-                } else {
-                    setMode('image');
-                }
+            modeImgBtn.onclick = () => {
+                if(currentMode === "image") toggleRatioSheet(true);
+                else setMode('image');
             };
 
-            // --- التحكم في قائمة المرفقات (+) ---
             attachBtn.onclick = (e) => {
                 e.stopPropagation();
                 attachMenu.classList.toggle('hidden');
             };
 
-            // --- التحكم في نافذة المقاسات (Ratio Sheet) ---
             const ratioSheet = document.getElementById('ratioSheet');
             const ratioSheetBackdrop = document.getElementById('ratioSheetBackdrop');
             const sheetHandle = document.getElementById('sheetHandle');
@@ -272,9 +256,7 @@
                 if(show) {
                     ratioSheetBackdrop.classList.remove('hidden');
                     ratioSheet.classList.remove('hidden');
-                    setTimeout(() => {
-                        ratioSheet.style.transform = "translateY(0)";
-                    }, 10);
+                    setTimeout(() => ratioSheet.style.transform = "translateY(0)", 10);
                 } else {
                     ratioSheet.style.transform = "translateY(100%)";
                     setTimeout(() => {
@@ -287,13 +269,10 @@
             ratioSheetBackdrop.onclick = () => toggleRatioSheet(false);
             sheetHandle.onclick = () => toggleRatioSheet(false);
 
-            // اختيار المقاس
             document.querySelectorAll('.ratio-option').forEach(opt => {
                 opt.onclick = () => {
                     selectedRatio = opt.dataset.ratio;
                     ratioDisplay.textContent = selectedRatio;
-                    
-                    // تحديث الشكل (Border)
                     document.querySelectorAll('.ratio-option').forEach(el => {
                         el.classList.replace('border-white', 'border-transparent');
                         el.querySelector('span').classList.replace('text-white', 'text-gray-400');
@@ -302,12 +281,10 @@
                     opt.classList.replace('border-transparent', 'border-white');
                     opt.querySelector('span').classList.replace('text-gray-400', 'text-white');
                     opt.querySelector('div').classList.replace('border-gray-500', 'border-white');
-
                     setTimeout(() => toggleRatioSheet(false), 200);
                 };
             });
 
-            // --- التحكم في القائمة الجانبية (Sidebar) ---
             const sidebar = document.getElementById('sidebar');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
             const menuBtn = document.getElementById('menuBtn');
@@ -324,59 +301,118 @@
 
             menuBtn.onclick = () => toggleSidebar(true);
             sidebarBackdrop.onclick = () => toggleSidebar(false);
+            window.onclick = () => attachMenu.classList.add('hidden');
 
-            // --- إغلاق القوائم عند الضغط في أي مكان ---
-            window.onclick = () => {
-                attachMenu.classList.add('hidden');
-            };
-
-            // --- منطق الإرسال والمحادثة البسيط ---
-            const sendBtn = document.getElementById('sendBtn');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const chatContainer = document.getElementById('chatContainer');
-
-            sendBtn.onclick = () => {
+            sendBtn.onclick = async () => {
                 const text = chatInput.value.trim();
                 if(!text) return;
 
-                // إخفاء شاشة الترحيب عند أول رسالة
                 welcomeScreen.classList.add('opacity-0');
                 setTimeout(() => {
                     welcomeScreen.classList.add('hidden');
                     chatContainer.classList.remove('hidden');
                 }, 300);
 
-                // إضافة رسالة المستخدم
                 appendMessage('user', text);
                 chatInput.value = "";
 
-                // رد تجريبي من البوت
-                setTimeout(() => {
-                    appendMessage('bot', "هذا رد تجريبي من Afnan AI. النموذج الحالي: " + internalModel);
-                }, 800);
+                const loadingMsg = appendLoading();
+
+                try {
+                    if (currentMode === "text") {
+                        chatHistory.push({ role: "user", content: text });
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ messages: chatHistory })
+                        });
+                        const data = await response.json();
+                        loadingMsg.remove();
+                        if (data.choices && data.choices[0]) {
+                            const botReply = data.choices[0].message.content;
+                            appendMessage('bot', botReply);
+                            chatHistory.push({ role: "assistant", content: botReply });
+                        } else {
+                            appendMessage('bot', "عذراً، حدث خطأ في الحصول على رد.");
+                        }
+                    } else {
+                        // Image Mode
+                        const response = await fetch('/api/image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                prompt: text,
+                                size: selectedRatio,
+                                resolution: "1K"
+                            })
+                        });
+                        const data = await response.json();
+                        loadingMsg.remove();
+                        if (data.success && data.imageUrl) {
+                            appendImage('bot', data.imageUrl);
+                        } else {
+                            appendMessage('bot', "عذراً، فشل توليد الصورة. " + (data.error || ""));
+                        }
+                    }
+                } catch (error) {
+                    loadingMsg.remove();
+                    appendMessage('bot', "حدث خطأ في الاتصال بالخادم.");
+                    console.error(error);
+                }
             };
 
             function appendMessage(sender, text) {
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
-                
                 const inner = document.createElement('div');
                 inner.className = sender === 'user' 
                     ? "bg-gray-100 text-gray-800 px-4 py-2.5 rounded-[20px] rounded-tr-sm max-w-[85%] font-naskh text-base"
-                    : "text-gray-800 px-1 py-1 max-w-[90%] font-naskh text-lg leading-relaxed";
-                
+                    : "text-gray-800 px-1 py-1 max-w-[90%] font-naskh text-lg leading-relaxed whitespace-pre-wrap";
                 inner.textContent = text;
                 msgDiv.appendChild(inner);
                 chatContainer.appendChild(msgDiv);
-                
-                // تمرير للأسفل
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
-            // إرسال عند ضغط Enter
-            chatInput.onkeydown = (e) => {
-                if(e.key === 'Enter') sendBtn.click();
-            };
+            function appendImage(sender, url) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
+                const imgContainer = document.createElement('div');
+                imgContainer.className = "max-w-[85%] rounded-2xl overflow-hidden shadow-lg border border-gray-100";
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = "w-full h-auto block";
+                img.alt = "Generated Image";
+                
+                // Add download button
+                const downloadBtn = document.createElement('a');
+                downloadBtn.href = url;
+                downloadBtn.download = "afnan-ai-image.jpg";
+                downloadBtn.className = "block bg-white text-center py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 transition border-t border-gray-100";
+                downloadBtn.innerHTML = '<i class="fa-solid fa-download ml-1"></i> تحميل الصورة';
+                downloadBtn.target = "_blank";
+
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(downloadBtn);
+                msgDiv.appendChild(imgContainer);
+                chatContainer.appendChild(msgDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function appendLoading() {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex justify-start fade-in mb-4`;
+                const inner = document.createElement('div');
+                inner.className = "text-gray-400 px-1 py-1 font-naskh text-lg";
+                inner.innerHTML = '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
+                msgDiv.appendChild(inner);
+                chatContainer.appendChild(msgDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return msgDiv;
+            }
+
+            chatInput.onkeydown = (e) => { if(e.key === 'Enter') sendBtn.click(); };
         });
     </script>
 </body>
