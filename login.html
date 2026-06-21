@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Welcome to Afnan ai</title>
-    <!-- استخدام النسخة المحلية من Tailwind و FontAwesome -->
     <link rel="stylesheet" href="assets/css/tailwind.css">
     <link rel="stylesheet" href="assets/css/fontawesome.css">
     <style>
@@ -42,30 +41,24 @@
 </head>
 <body class="flex flex-col items-center justify-between min-h-screen p-8 pb-12">
 
-    <!-- Header -->
     <div class="w-full flex justify-between items-center">
-        <div class="bg-[#f0f0f0] px-4 py-1.5 rounded-lg text-xs font-bold text-gray-600 cursor-pointer hover:bg-[#e0e0e0]">
-            EN
-        </div>
+        <div class="bg-[#f0f0f0] px-4 py-1.5 rounded-lg text-xs font-bold text-gray-600 cursor-pointer hover:bg-[#e0e0e0]">EN</div>
         <div class="w-10 h-10 flex items-center justify-center">
-            <img src="assets/img/logo.png" alt="Logo" class="w-8 h-8">
+            <img src="assets/img/logo.jpg" alt="Logo" class="w-8 h-8">
         </div>
     </div>
 
-    <!-- Hero Content -->
     <div class="flex-1 flex flex-col items-center justify-center text-center space-y-4 w-full max-w-sm">
         <h1 class="text-4xl font-bold tracking-tight">Welcome to Afnan ai</h1>
         <p class="text-gray-500 text-lg">ابدأ رحلتك الإبداعية الآن</p>
     </div>
 
-    <!-- Auth Buttons -->
     <div class="w-full max-w-sm space-y-10">
         <div class="text-center">
             <span class="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">LOGIN TO CONTINUE</span>
         </div>
 
         <div class="space-y-3">
-            <!-- Google -->
             <button id="googleLogin" class="btn-social w-full bg-black text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-gray-900 shadow-xl shadow-black/5">
                 <svg class="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -75,8 +68,6 @@
                 </svg>
                 <span>Google Log in</span>
             </button>
-
-            <!-- GitHub -->
             <button id="githubLogin" class="btn-social w-full bg-[#f8f8f8] text-gray-800 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-gray-200 hover:bg-[#f0f0f0]">
                 <i class="fa-brands fa-github text-xl"></i>
                 <span>GitHub Login</span>
@@ -84,25 +75,38 @@
         </div>
     </div>
 
-    <!-- iPhone Bottom Indicator -->
     <div class="w-32 h-1.5 bg-[#f0f0f0] rounded-full mt-8"></div>
 
     <script>
         const googleBtn = document.getElementById('googleLogin');
         const githubBtn = document.getElementById('githubLogin');
 
-        const simulateLogin = (btn) => {
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
+        const simulateLogin = () => {
+            googleBtn.disabled = true;
+            googleBtn.innerHTML = '<div class="loader"></div>';
+            
+            // Simulate local auth
+            const user = {
+                id: Date.now().toString(),
+                username: 'مستخدم تجريبي',
+                email: 'demo@afnanai.com',
+                plan: 'free',
+                credits: 300
+            };
+            localStorage.setItem('afnanUser', JSON.stringify(user));
             
             setTimeout(() => {
                 location.href = 'index.html';
-            }, 1500);
+            }, 1000);
         };
 
-        googleBtn.onclick = () => simulateLogin(googleBtn);
-        githubBtn.onclick = () => simulateLogin(githubBtn);
+        googleBtn.onclick = simulateLogin;
+        githubBtn.onclick = simulateLogin;
+
+        // Check if already logged in
+        if (localStorage.getItem('afnanUser')) {
+            location.href = 'index.html';
+        }
     </script>
 </body>
 </html>
