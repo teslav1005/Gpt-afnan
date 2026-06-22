@@ -12,11 +12,13 @@
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
         .app-container { max-width: 480px; margin: 0 auto; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 160px; }
+        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 200px; }
         #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 28px; padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 40; transition: all 0.4s; }
         #optionsArea.collapsed { max-height: 0; opacity: 0; overflow: hidden; margin: 0; }
         textarea { resize: none; min-height: 24px; max-height: 100px; }
-        .image-slot { width: 55px; height: 55px; border: 1px dashed #52525b; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #18181b; flex-shrink: 0; background-size: cover; background-position: center; cursor: pointer; }
+        .image-slot { width: 50px; height: 50px; border: 1px dashed #3f3f46; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #18181b; flex-shrink: 0; background-size: cover; background-position: center; cursor: pointer; position: relative; }
+        .image-slot.has-image { border-style: solid; border-color: #71717a; }
+        .remove-img { position: absolute; -top: 5px; -right: 5px; background: #ef4444; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
         #modelSelectModal.active { opacity: 1; pointer-events: auto; }
         #modelSelectContent { transition: transform 0.3s; transform: translateY(100%); }
         #modelSelectModal.active #modelSelectContent { transform: translateY(0); }
@@ -40,30 +42,50 @@
         </div>
         <div id="chatSection" class="hidden space-y-4">
             <div class="bg-zinc-800 p-3 rounded-2xl rounded-tr-none text-xs max-w-[85%]"><p id="submittedPromptText" class="font-semibold"></p></div>
-            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-tl-none w-full space-y-3">
-                <div id="generationScreen" class="w-full rounded-xl bg-black aspect-square flex flex-col items-center justify-center relative overflow-hidden">
-                    <div id="loader" class="flex flex-col items-center"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">جاري التوليد...</p></div>
-                    <img id="resultImg" class="hidden w-full h-full object-contain">
-                </div>
-                <div id="successActions" class="hidden flex justify-center"><button id="downloadBtn" class="bg-white text-black px-4 py-2 rounded-lg text-xs font-bold">تحميل الصورة</button></div>
+            <div id="resultsContainer" class="grid grid-cols-1 gap-4">
+                <!-- Generated images will appear here -->
             </div>
         </div>
     </main>
 
     <div id="floatingBottomSheet">
+        <div class="flex flex-col gap-2 mb-2 px-1">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-paperclip ml-1"></i> الصور المرفقة (بحد أقصى 3)</span>
+                <span id="imgCounter" class="text-[10px] text-gray-500">0/3</span>
+            </div>
+            <div class="flex gap-2" id="imageSlotsContainer">
+                <div class="image-slot" onclick="triggerUpload(0)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 0)"></div>
+                <div class="image-slot" onclick="triggerUpload(1)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 1)"></div>
+                <div class="image-slot" onclick="triggerUpload(2)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 2)"></div>
+            </div>
+        </div>
+
         <div class="flex items-end gap-2 bg-[#1C1C1E] p-1.5 pl-2 rounded-full border border-gray-700/50 focus-within:border-gray-500">
             <button id="toggleSettingsBtn" class="w-9 h-9 flex items-center justify-center text-gray-400 bg-gray-800/40 rounded-full"><i class="fa-solid fa-sliders text-sm"></i></button>
             <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white" placeholder="صف الصورة التي تريدها..."></textarea>
             <button id="sendBtn" class="bg-white text-black rounded-full w-9 h-9 flex-shrink-0 flex items-center justify-center opacity-40 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs"></i></button>
         </div>
+        
         <div id="optionsArea" class="collapsed mt-3 flex flex-col gap-3 px-1">
             <div class="flex gap-2">
                 <button id="openModelSelect" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2.5 flex flex-col items-start">
                     <span class="text-[9px] text-gray-500 font-bold">النموذج</span>
-                    <span id="selectedModelLabel" class="font-bold text-xs">Nano Banana 2</span>
+                    <span id="selectedModelLabel" class="font-bold text-xs">flux</span>
                 </button>
                 <div id="ratioContainer" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2 flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
             </div>
+            
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[9px] text-gray-500 font-bold px-1">عدد الصور</span>
+                <div id="countContainer" class="flex bg-gray-800/40 border border-gray-700 rounded-xl p-1 gap-1">
+                    <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-black" data-count="1">1x</button>
+                    <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400" data-count="2">2x</button>
+                    <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400" data-count="3">3x</button>
+                    <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400" data-count="4">4x</button>
+                </div>
+            </div>
+
             <button id="closeOptionsBtn" class="w-full py-1.5 text-gray-500 bg-zinc-900 rounded-lg"><i class="fa-solid fa-chevron-down text-xs"></i> إخفاء الإعدادات</button>
         </div>
     </div>
@@ -74,29 +96,41 @@
     <div id="modelSelectContent" class="absolute bottom-0 left-0 right-0 bg-[#161618] p-6 rounded-t-[32px] border-t border-gray-800">
         <h3 class="font-bold text-xs mb-4 text-center text-gray-300">نماذج توليد الصور</h3>
         <div class="space-y-2">
-            <div class="model-item p-3 bg-zinc-900 rounded-xl cursor-pointer" data-model="Nano Banana 2">Nano Banana 2</div>
-            <div class="model-item p-3 bg-zinc-900 rounded-xl cursor-pointer" data-model="GPT Image 2">GPT Image 2</div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="flux">
+                <span class="font-bold text-sm text-white">flux</span>
+                <i class="fa-solid fa-bolt text-amber-500 text-xs"></i>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="gpt-image-2">
+                <span class="font-bold text-sm text-white">gpt-image-2</span>
+                <i class="fa-solid fa-brain text-blue-500 text-xs"></i>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="nanobanana-2">
+                <span class="font-bold text-sm text-white">nanobanana-2</span>
+                <i class="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs"></i>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let selectedModel = "Nano Banana 2";
+    let selectedModel = "flux";
     let selectedRatio = "1:1";
+    let selectedCount = 1;
+    let attachedImages = [null, null, null];
     const ratios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
     const optionsArea = document.getElementById('optionsArea');
-    const resultImg = document.getElementById('resultImg');
-    const loader = document.getElementById('loader');
+    const resultsContainer = document.getElementById('resultsContainer');
 
-    // UI
+    // UI Toggle
     document.getElementById('toggleSettingsBtn').onclick = () => optionsArea.classList.toggle('collapsed');
     document.getElementById('closeOptionsBtn').onclick = () => optionsArea.classList.add('collapsed');
     document.getElementById('openModelSelect').onclick = () => document.getElementById('modelSelectModal').classList.add('active');
     document.getElementById('modalBackdrop').onclick = () => document.getElementById('modelSelectModal').classList.remove('active');
 
+    // Model Selection
     document.querySelectorAll('.model-item').forEach(m => {
         m.onclick = () => {
             selectedModel = m.dataset.model;
@@ -105,6 +139,7 @@
         };
     });
 
+    // Ratio Selection
     const ratioContainer = document.getElementById('ratioContainer');
     ratios.forEach(r => {
         const btn = document.createElement('button');
@@ -118,6 +153,58 @@
         ratioContainer.appendChild(btn);
     });
 
+    // Count Selection
+    document.querySelectorAll('.count-btn').forEach(btn => {
+        btn.onclick = () => {
+            selectedCount = parseInt(btn.dataset.count);
+            document.querySelectorAll('.count-btn').forEach(b => {
+                b.classList.remove('bg-white', 'text-black');
+                b.classList.add('text-gray-400');
+            });
+            btn.classList.add('bg-white', 'text-black');
+            btn.classList.remove('text-gray-400');
+        };
+    });
+
+    // Image Upload Handling
+    function triggerUpload(index) {
+        if (attachedImages[index]) {
+            removeImage(index);
+        } else {
+            document.querySelectorAll('.image-slot input')[index].click();
+        }
+    }
+
+    function handleImageUpload(event, index) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                attachedImages[index] = e.target.result;
+                const slot = document.querySelectorAll('.image-slot')[index];
+                slot.style.backgroundImage = `url(${e.target.result})`;
+                slot.classList.add('has-image');
+                slot.innerHTML = '<div class="remove-img" onclick="event.stopPropagation(); removeImage(' + index + ')"><i class="fa-solid fa-xmark"></i></div>';
+                updateCounter();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeImage(index) {
+        attachedImages[index] = null;
+        const slot = document.querySelectorAll('.image-slot')[index];
+        slot.style.backgroundImage = 'none';
+        slot.classList.remove('has-image');
+        slot.innerHTML = '<i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, ' + index + ')">';
+        updateCounter();
+    }
+
+    function updateCounter() {
+        const count = attachedImages.filter(img => img !== null).length;
+        document.getElementById('imgCounter').textContent = `${count}/3`;
+    }
+
     promptInput.oninput = () => {
         if (promptInput.value.trim()) sendBtn.classList.remove('opacity-40', 'pointer-events-none');
         else sendBtn.classList.add('opacity-40', 'pointer-events-none');
@@ -130,31 +217,65 @@
         document.getElementById('submittedPromptText').textContent = prompt;
         optionsArea.classList.add('collapsed');
         
-        loader.classList.remove('hidden');
-        resultImg.classList.add('hidden');
-        document.getElementById('successActions').classList.add('hidden');
+        resultsContainer.innerHTML = '';
+        
+        // Create skeleton loaders for the requested count
+        for (let i = 0; i < selectedCount; i++) {
+            const card = document.createElement('div');
+            card.className = "bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-tl-none w-full space-y-3";
+            card.innerHTML = `
+                <div class="w-full rounded-xl bg-black aspect-square flex flex-col items-center justify-center relative overflow-hidden">
+                    <div class="loader flex flex-col items-center"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">جاري التوليد ${selectedCount > 1 ? (i+1) : ''}...</p></div>
+                    <img class="hidden w-full h-full object-contain result-img">
+                </div>
+                <div class="success-actions hidden flex justify-center"><button class="bg-white text-black px-4 py-2 rounded-lg text-xs font-bold download-btn">تحميل الصورة</button></div>
+            `;
+            resultsContainer.appendChild(card);
+        }
 
         try {
+            const validImages = attachedImages.filter(img => img !== null);
             const res = await fetch('/api/image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, model: selectedModel, size: selectedRatio })
+                body: JSON.stringify({ 
+                    prompt, 
+                    model: selectedModel, 
+                    size: selectedRatio, 
+                    n: selectedCount,
+                    images: validImages
+                })
             });
             const data = await res.json();
+            
             if (data.success) {
-                resultImg.src = data.imageUrl;
-                resultImg.onload = () => {
-                    loader.classList.add('hidden');
-                    resultImg.classList.remove('hidden');
-                    document.getElementById('successActions').classList.remove('hidden');
-                };
+                const imgElements = document.querySelectorAll('.result-img');
+                const loaders = document.querySelectorAll('.loader');
+                const actions = document.querySelectorAll('.success-actions');
+                const downloadBtns = document.querySelectorAll('.download-btn');
+
+                // In this implementation, we handle multiple images
+                // If the API returns one URL but requested N, we show it N times or handle accordingly
+                // Based on Pollinations, we might get one URL or multiple
+                
+                imgElements.forEach((img, idx) => {
+                    // For demo/simplicity, if API returns one URL, we use it. 
+                    // In a real multi-image API, data.images would be an array.
+                    const url = data.imageUrls ? data.imageUrls[idx] : data.imageUrl;
+                    img.src = url + (selectedCount > 1 ? `&seed=${Math.random()}` : ''); 
+                    img.onload = () => {
+                        loaders[idx].classList.add('hidden');
+                        img.classList.remove('hidden');
+                        actions[idx].classList.remove('hidden');
+                        downloadBtns[idx].onclick = () => window.open(img.src, '_blank');
+                    };
+                });
             }
         } catch (e) {
             alert("خطأ في توليد الصورة");
         }
     };
 
-    document.getElementById('downloadBtn').onclick = () => window.open(resultImg.src, '_blank');
     document.getElementById('newChatBtn').onclick = () => location.reload();
 </script>
 </body>

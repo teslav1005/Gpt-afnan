@@ -12,10 +12,13 @@
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
         .app-container { max-width: 480px; margin: 0 auto; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 160px; }
+        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 220px; }
         #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 28px; padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 40; transition: all 0.4s; }
         #optionsArea.collapsed { max-height: 0; opacity: 0; overflow: hidden; margin: 0; }
         textarea { resize: none; min-height: 24px; max-height: 100px; }
+        .image-slot { width: 60px; height: 60px; border: 1px dashed #3f3f46; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #18181b; flex-shrink: 0; background-size: cover; background-position: center; cursor: pointer; position: relative; }
+        .image-slot.has-image { border-style: solid; border-color: #71717a; }
+        .remove-img { position: absolute; -top: 5px; -right: 5px; background: #ef4444; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
         #modelSelectModal.active { opacity: 1; pointer-events: auto; }
         #modelSelectContent { transition: transform 0.3s; transform: translateY(100%); }
         #modelSelectModal.active #modelSelectContent { transform: translateY(0); }
@@ -50,19 +53,55 @@
     </main>
 
     <div id="floatingBottomSheet">
+        <div class="flex flex-col gap-2 mb-2 px-1">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-paperclip ml-1"></i> الصور المرفقة</span>
+                <span class="text-[9px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full font-bold">إطار بداية ونهاية (2)</span>
+            </div>
+            <div class="flex gap-3" id="imageSlotsContainer">
+                <div class="image-slot" onclick="triggerUpload(0)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 0)"></div>
+                <div class="image-slot" onclick="triggerUpload(1)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 1)"></div>
+            </div>
+        </div>
+
         <div class="flex items-end gap-2 bg-[#1C1C1E] p-1.5 pl-2 rounded-full border border-gray-700/50 focus-within:border-gray-500">
             <button id="toggleSettingsBtn" class="w-9 h-9 flex items-center justify-center text-gray-400 bg-gray-800/40 rounded-full"><i class="fa-solid fa-sliders text-sm"></i></button>
-            <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white" placeholder="صف الفيديو الذي تريده..."></textarea>
+            <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white" placeholder="اكتب وصف الفيديو هنا..."></textarea>
             <button id="sendBtn" class="bg-white text-black rounded-full w-9 h-9 flex-shrink-0 flex items-center justify-center opacity-40 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs"></i></button>
         </div>
+
         <div id="optionsArea" class="collapsed mt-3 flex flex-col gap-3 px-1">
             <div class="flex gap-2">
-                <button id="openModelSelect" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2.5 flex flex-col items-start">
+                <button id="openModelSelect" class="flex-[1.5] bg-gray-800/40 border border-gray-700 rounded-xl p-2.5 flex flex-col items-start">
                     <span class="text-[9px] text-gray-500 font-bold">المحرك</span>
-                    <span id="selectedModelLabel" class="font-bold text-xs">Veo 3.1</span>
+                    <span id="selectedModelLabel" class="font-bold text-xs">wan-pro</span>
                 </button>
-                <div id="durationContainer" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2 flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
+                <div id="ratioContainer" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2 flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
             </div>
+
+            <div class="bg-gray-800/40 border border-gray-700 rounded-xl p-3 flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] text-gray-400 font-bold"><i class="fa-regular fa-clock ml-1"></i> مدة التوليد</span>
+                </div>
+                <div id="durationContainer" class="flex gap-2">
+                    <button class="dur-btn flex-1 py-2 rounded-lg text-xs font-bold bg-white text-black" data-val="5">5 ث</button>
+                    <button class="dur-btn flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 border border-white/5" data-val="10">10 ث</button>
+                    <button class="dur-btn flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 border border-white/5" data-val="15">15 ث</button>
+                    <button class="dur-btn flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 border border-white/5" data-val="20">20 ث</button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-gray-800/40 border border-gray-700 rounded-xl p-3">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold">تمديد ذكي <i class="fa-solid fa-link text-[10px] text-blue-400 mr-1"></i></span>
+                    <span class="text-[9px] text-gray-500">5+ ثواني</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer">
+                    <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
             <button id="closeOptionsBtn" class="w-full py-1.5 text-gray-500 bg-zinc-900 rounded-lg"><i class="fa-solid fa-chevron-down text-xs"></i> إخفاء الإعدادات</button>
         </div>
     </div>
@@ -71,19 +110,36 @@
 <div id="modelSelectModal" class="fixed inset-0 bg-black/60 z-50 opacity-0 pointer-events-none backdrop-blur-sm transition-opacity">
     <div class="absolute inset-0" id="modalBackdrop"></div>
     <div id="modelSelectContent" class="absolute bottom-0 left-0 right-0 bg-[#161618] p-6 rounded-t-[32px] border-t border-gray-800">
-        <h3 class="font-bold text-xs mb-4 text-center text-gray-300">محركات التوليد</h3>
-        <div class="space-y-2">
-            <div class="model-item p-3 bg-zinc-900 rounded-xl cursor-pointer" data-model="Veo 3.1">Veo 3.1 (Google)</div>
-            <div class="model-item p-3 bg-zinc-900 rounded-xl cursor-pointer" data-model="Wan 2.7">Wan 2.7 (1080p)</div>
-            <div class="model-item p-3 bg-zinc-900 rounded-xl cursor-pointer" data-model="LTX 2.3">LTX 2.3 (Control)</div>
+        <h3 class="font-bold text-xs mb-4 text-center text-gray-300">محركات توليد الفيديو</h3>
+        <div class="space-y-2 max-h-[60vh] overflow-y-auto no-scrollbar">
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="wan-pro">
+                <span class="font-bold text-sm text-white">wan-pro</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-500 px-2 py-1 rounded-lg">الأفضل</span>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="veo">
+                <span class="font-bold text-sm text-white">veo</span>
+                <span class="text-[10px] text-gray-500">Google</span>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="ltx-2">
+                <span class="font-bold text-sm text-white">ltx-2</span>
+                <span class="text-[10px] text-gray-500">Control</span>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="seedance-2.0">
+                <span class="font-bold text-sm text-white">seedance-2.0</span>
+            </div>
+            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="p-video-720p">
+                <span class="font-bold text-sm text-white">p-video-720p</span>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let selectedModel = "Veo 3.1";
-    let selectedDuration = 4;
-    const durations = [4, 8, 10];
+    let selectedModel = "wan-pro";
+    let selectedDuration = 5;
+    let selectedRatio = "16:9";
+    let attachedImages = [null, null];
+    const ratios = ["1:1", "9:16", "16:9"];
 
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -91,11 +147,13 @@
     const resultVideo = document.getElementById('resultVideo');
     const loader = document.getElementById('loader');
 
+    // UI Toggle
     document.getElementById('toggleSettingsBtn').onclick = () => optionsArea.classList.toggle('collapsed');
     document.getElementById('closeOptionsBtn').onclick = () => optionsArea.classList.add('collapsed');
     document.getElementById('openModelSelect').onclick = () => document.getElementById('modelSelectModal').classList.add('active');
     document.getElementById('modalBackdrop').onclick = () => document.getElementById('modelSelectModal').classList.remove('active');
 
+    // Model Selection
     document.querySelectorAll('.model-item').forEach(m => {
         m.onclick = () => {
             selectedModel = m.dataset.model;
@@ -104,18 +162,64 @@
         };
     });
 
-    const durationContainer = document.getElementById('durationContainer');
-    durations.forEach(d => {
+    // Ratio Selection
+    const ratioContainer = document.getElementById('ratioContainer');
+    ratios.forEach(r => {
         const btn = document.createElement('button');
-        btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap ${d === selectedDuration ? 'bg-white text-black' : 'text-gray-400'}`;
-        btn.textContent = `${d}ث`;
+        btn.className = `px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap ${r === selectedRatio ? 'bg-zinc-700 text-white' : 'text-gray-500'}`;
+        btn.textContent = r;
         btn.onclick = () => {
-            selectedDuration = d;
-            Array.from(durationContainer.children).forEach(b => b.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap text-gray-400`);
-            btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap bg-white text-black`;
+            selectedRatio = r;
+            Array.from(ratioContainer.children).forEach(b => b.className = `px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap text-gray-500`);
+            btn.className = `px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap bg-zinc-700 text-white`;
         };
-        durationContainer.appendChild(btn);
+        ratioContainer.appendChild(btn);
     });
+
+    // Duration Selection
+    document.querySelectorAll('.dur-btn').forEach(btn => {
+        btn.onclick = () => {
+            selectedDuration = parseInt(btn.dataset.val);
+            document.querySelectorAll('.dur-btn').forEach(b => {
+                b.classList.remove('bg-white', 'text-black');
+                b.classList.add('text-gray-400', 'border', 'border-white/5');
+            });
+            btn.classList.add('bg-white', 'text-black');
+            btn.classList.remove('text-gray-400', 'border', 'border-white/5');
+        };
+    });
+
+    // Image Upload Handling
+    function triggerUpload(index) {
+        if (attachedImages[index]) {
+            removeImage(index);
+        } else {
+            document.querySelectorAll('.image-slot input')[index].click();
+        }
+    }
+
+    function handleImageUpload(event, index) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                attachedImages[index] = e.target.result;
+                const slot = document.querySelectorAll('.image-slot')[index];
+                slot.style.backgroundImage = `url(${e.target.result})`;
+                slot.classList.add('has-image');
+                slot.innerHTML = '<div class="remove-img" onclick="event.stopPropagation(); removeImage(' + index + ')"><i class="fa-solid fa-xmark"></i></div>';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeImage(index) {
+        attachedImages[index] = null;
+        const slot = document.querySelectorAll('.image-slot')[index];
+        slot.style.backgroundImage = 'none';
+        slot.classList.remove('has-image');
+        slot.innerHTML = '<i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, ' + index + ')">';
+    }
 
     promptInput.oninput = () => {
         if (promptInput.value.trim()) sendBtn.classList.remove('opacity-40', 'pointer-events-none');
@@ -137,7 +241,14 @@
             const res = await fetch('/api/video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, model: selectedModel, duration: selectedDuration })
+                body: JSON.stringify({ 
+                    prompt, 
+                    model: selectedModel, 
+                    duration: selectedDuration,
+                    size: selectedRatio,
+                    startImage: attachedImages[0],
+                    endImage: attachedImages[1]
+                })
             });
             const data = await res.json();
             if (data.success) {

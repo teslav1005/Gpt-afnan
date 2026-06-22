@@ -17,15 +17,18 @@ const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 // ==================== TEXT GENERATION (OpenAI Compatible) ====================
 app.post('/api/chat', async (req, res) => {
     try {
-        const { messages, model = "openai" } = req.body;
+        const { messages, model = "deepseek-v4-flash" } = req.body;
         
-        // Map frontend model names to Pollinations/DeepSeek model names
-        let targetModel = model;
-        if (model.includes("DeepSeek")) targetModel = "deepseek";
-        else if (model.includes("GPT")) targetModel = "openai";
-        else if (model.includes("Gemini")) targetModel = "gemini";
-        else if (model.includes("Claude")) targetModel = "claude";
-        else if (model.includes("Kimi")) targetModel = "kimi";
+        // Map frontend model names to Pollinations/DeepSeek model names as requested
+        let targetModel = "deepseek";
+        if (model === "deepseek-v4-flash") targetModel = "deepseek";
+        else if (model === "deepseek-v4-pro") targetModel = "deepseek-reasoner";
+        else if (model === "minimax-m2.7") targetModel = "minimax";
+        else if (model === "claude-4.8") targetModel = "claude"; // In backend it's claude-large
+        else if (model === "gemini-3.1-pro") targetModel = "gemini"; // In backend it's gemini-large
+        else if (model === "kimi-2.7") targetModel = "kimi"; // In backend it's kimi-code
+        else if (model === "gpt-5.5") targetModel = "openai"; // In backend it's openai-large
+        else if (model === "perplexity-reasoning") targetModel = "p-search";
 
         const response = await axios.post(`${POLLINATIONS_BASE_URL}/v1/chat/completions`, {
             model: targetModel,
@@ -48,19 +51,16 @@ app.post('/api/chat', async (req, res) => {
 // ==================== IMAGE GENERATION ====================
 app.post('/api/image', async (req, res) => {
     try {
-        const { prompt, model = "flux", size = "1:1", n = 1 } = req.body;
+        const { prompt, model = "flux", size = "1:1", n = 1, images = [] } = req.body;
         
-        // Map frontend model names
         let targetModel = "flux";
-        if (model === "Nano Banana 2") targetModel = "nanobanana-2";
-        else if (model === "GPT Image 2") targetModel = "gpt-image-2";
+        if (model === "nanobanana-2" || model === "Nano Banana 2") targetModel = "nanobanana-2";
+        else if (model === "gpt-image-2" || model === "GPT Image 2") targetModel = "gpt-image-2";
+        else if (model === "flux") targetModel = "flux";
 
-        // Pollinations image generation is via GET
-        // Format: https://gen.pollinations.ai/image/{prompt}?model={model}&width={w}&height={h}
-        // We'll return the URL directly as Pollinations is fast and doesn't always need async for simple images
         const [width, height] = parseSize(size);
-        const imageUrl = `${POLLINATIONS_BASE_URL}/image/${encodeURIComponent(prompt)}?model=${targetModel}&width=${width}&height=${height}&n=${n}&key=${POLLINATIONS_API_KEY}`;
-
+        let imageUrl = `${POLLINATIONS_BASE_URL}/image/${encodeURIComponent(prompt)}?model=${targetModel}&width=${width}&height=${height}&n=${n}&key=${POLLINATIONS_API_KEY}`;
+        
         res.json({ success: true, imageUrl: imageUrl });
     } catch (error) {
         res.status(500).json({ error: 'Failed to generate image' });
@@ -70,18 +70,19 @@ app.post('/api/image', async (req, res) => {
 // ==================== VIDEO GENERATION ====================
 app.post('/api/video', async (req, res) => {
     try {
-        const { prompt, model = "wan", duration = 4, size = "16:9" } = req.body;
+        const { prompt, model = "wan", duration = 4, size = "16:9", startImage = null, endImage = null } = req.body;
 
-        // Map frontend model names to Pollinations models
-        let targetModel = "wan";
-        if (model.includes("Veo")) targetModel = "veo";
-        else if (model.includes("LTX")) targetModel = "ltx-2";
-        else if (model.includes("Wan")) targetModel = "wan-pro";
-        else if (model.includes("Seedance")) targetModel = "seedance-pro";
-        else if (model.includes("Nova")) targetModel = "nova-reel";
+        let targetModel = "wan-pro";
+        if (model === "veo") targetModel = "veo";
+        else if (model === "ltx-2") targetModel = "ltx-2";
+        else if (model === "wan-pro") targetModel = "wan-pro";
+        else if (model === "seedance-2.0") targetModel = "seedance-pro";
+        else if (model === "p-video-720p") targetModel = "p-video-720p";
 
-        // Video generation URL
-        const videoUrl = `${POLLINATIONS_BASE_URL}/video/${encodeURIComponent(prompt)}?model=${targetModel}&duration=${duration}&size=${size}&key=${POLLINATIONS_API_KEY}`;
+        let videoUrl = `${POLLINATIONS_BASE_URL}/video/${encodeURIComponent(prompt)}?model=${targetModel}&duration=${duration}&size=${size}&key=${POLLINATIONS_API_KEY}`;
+        
+        if (startImage) videoUrl += `&start_image=${encodeURIComponent(startImage)}`;
+        if (endImage) videoUrl += `&end_image=${encodeURIComponent(endImage)}`;
 
         res.json({ success: true, videoUrl: videoUrl });
     } catch (error) {
@@ -89,7 +90,6 @@ app.post('/api/video', async (req, res) => {
     }
 });
 
-// Helper to parse aspect ratio to dimensions
 function parseSize(size) {
     const map = {
         "1:1": [1024, 1024],

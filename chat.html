@@ -12,7 +12,7 @@
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
         .app-container { max-width: 480px; margin: 0 auto; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 120px; }
+        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth; }
         #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 24px; padding: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 20; }
         textarea { resize: none; overflow-y: auto; min-height: 24px; max-height: 100px; line-height: 1.4; }
         #sidebarDrawer { position: absolute; top: 0; right: -100%; width: 75%; max-width: 320px; height: 100%; background-color: var(--sidebar-bg); z-index: 50; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255, 255, 255, 0.08); }
@@ -24,6 +24,11 @@
         .model-item:hover, .model-item.active { background-color: rgba(255, 255, 255, 0.08); }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-history-item { position: relative; transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; border: 1px solid transparent; }
+        .chat-history-item.active { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .chat-history-item:hover .item-actions { opacity: 1; }
+        .item-actions { opacity: 0; transition: opacity 0.2s; }
+        .pinned-badge { color: #f59e0b; font-size: 8px; }
     </style>
 </head>
 <body>
@@ -32,15 +37,19 @@
     <div id="sidebarDrawer" class="flex flex-col justify-between p-4">
         <div class="flex flex-col h-[85%] space-y-4">
             <div class="flex justify-between items-center pb-2 border-b border-white/5">
-                <span class="text-xs font-bold text-gray-400">القائمة الرئيسية</span>
+                <span class="text-xs font-bold text-gray-400">المحادثات السابقة</span>
                 <button id="closeSidebarBtn" class="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center bg-zinc-900 rounded-full"><i class="fa-solid fa-xmark text-xs"></i></button>
             </div>
             <button id="sidebarNewChatBtn" class="w-full bg-white text-black hover:bg-gray-200 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-plus text-xs"></i> محادثة جديدة</button>
-            <div class="grid grid-cols-2 gap-2">
+            
+            <div id="chatHistory" class="flex-1 overflow-y-auto no-scrollbar space-y-1 py-2">
+                <!-- History items will be injected here -->
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
                 <a href="Image.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-regular fa-image text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الصور</span></a>
                 <a href="Video.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-solid fa-clapperboard text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الفيديو</span></a>
             </div>
-            <div id="chatHistory" class="flex-1 overflow-y-auto no-scrollbar space-y-2 py-4"></div>
         </div>
         <div class="pt-4 border-t border-white/5 flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-white font-bold text-xs">U</div>
@@ -53,19 +62,44 @@
         <div class="flex justify-between items-center p-4">
             <button id="menuBtn" class="text-white hover:text-gray-300 w-9 h-9 flex items-center justify-center bg-zinc-900 rounded-full transition active:scale-90"><i class="fa-solid fa-bars text-sm"></i></button>
             <div id="modelTrigger" class="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-200 hover:text-white select-none py-1.5 px-3 rounded-full bg-zinc-900/40 border border-white/5 active:scale-95 transition">
-                <span id="activeModelDisplay">DeepSeek V4 Pro</span><i id="dropdownArrow" class="fa-solid fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200"></i>
+                <span id="activeModelDisplay">deepseek-v4-flash</span><i id="dropdownArrow" class="fa-solid fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200"></i>
             </div>
             <div class="flex items-center gap-1.5">
                 <button id="headerNewChatBtn" class="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center bg-zinc-900/50 rounded-full transition"><i class="fa-solid fa-circle-plus text-xs"></i></button>
             </div>
         </div>
-        <div id="modelsDropdown" class="hidden absolute top-full left-4 right-4 bg-[#141417]/95 backdrop-blur-lg border border-white/10 rounded-2xl p-2 mt-1.5 shadow-2xl z-50 max-h-[290px] overflow-y-auto no-scrollbar">
+        <div id="modelsDropdown" class="hidden absolute top-full left-4 right-4 bg-[#141417]/95 backdrop-blur-lg border border-white/10 rounded-2xl p-2 mt-1.5 shadow-2xl z-50 max-h-[350px] overflow-y-auto no-scrollbar">
             <div class="space-y-1" id="dropdownModelsList">
-                <div class="model-item active p-2.5 rounded-xl text-xs font-bold text-white" data-model="DeepSeek V4 Pro">DeepSeek V4 Pro</div>
-                <div class="model-item p-2.5 rounded-xl text-xs font-semibold text-gray-400" data-model="Moonshot Kimi K2.7 Code">Moonshot Kimi K2.7 Code</div>
-                <div class="model-item p-2.5 rounded-xl text-xs font-semibold text-gray-400" data-model="GPT-5.4">GPT-5.4</div>
-                <div class="model-item p-2.5 rounded-xl text-xs font-semibold text-gray-400" data-model="Gemini 3.1 Pro">Gemini 3.1 Pro</div>
-                <div class="model-item p-2.5 rounded-xl text-xs font-semibold text-gray-400" data-model="Claude Sonnet 4.6">Claude Sonnet 4.6</div>
+                <div class="model-item active p-3 rounded-xl flex flex-col" data-model="deepseek-v4-flash">
+                    <span class="text-xs font-bold text-white">deepseek-v4-flash</span>
+                    <span class="text-[9px] text-gray-500">النموذج الرئيسي السريع</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="deepseek-v4-pro">
+                    <span class="text-xs font-bold text-gray-400">deepseek-v4-pro</span>
+                    <span class="text-[9px] text-gray-600">الأداء الأقوى</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="minimax-m2.7">
+                    <span class="text-xs font-bold text-gray-400">minimax-m2.7</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="claude-4.8">
+                    <span class="text-xs font-bold text-gray-400">claude-4.8</span>
+                    <span class="text-[9px] text-gray-600">Claude Large</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="gemini-3.1-pro">
+                    <span class="text-xs font-bold text-gray-400">gemini-3.1-pro</span>
+                    <span class="text-[9px] text-gray-600">Gemini Large</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="kimi-2.7">
+                    <span class="text-xs font-bold text-gray-400">kimi-2.7</span>
+                    <span class="text-[9px] text-gray-600">Kimi Code</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="gpt-5.5">
+                    <span class="text-xs font-bold text-gray-400">gpt-5.5</span>
+                    <span class="text-[9px] text-gray-600">OpenAI Large</span>
+                </div>
+                <div class="model-item p-3 rounded-xl flex flex-col" data-model="perplexity-reasoning">
+                    <span class="text-xs font-bold text-gray-400">perplexity-reasoning</span>
+                </div>
             </div>
         </div>
     </header>
@@ -74,9 +108,9 @@
         <div id="welcomeSection" class="flex flex-col items-center justify-center text-center py-16 px-4 space-y-3">
             <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-xl text-white"><i class="fa-regular fa-comment-dots"></i></div>
             <h2 class="text-sm font-bold text-white">استوديو الدردشة الذكي</h2>
-            <p class="text-[11px] text-gray-500 max-w-[280px] leading-relaxed">النموذج النشط حالياً: <span id="welcomeModelDisplay" class="text-white font-bold">DeepSeek V4 Pro</span></p>
+            <p class="text-[11px] text-gray-500 max-w-[280px] leading-relaxed">النموذج النشط حالياً: <span id="welcomeModelDisplay" class="text-white font-bold">deepseek-v4-flash</span></p>
         </div>
-        <div id="chatSection" class="hidden space-y-4 mt-2"></div>
+        <div id="chatSection" class="hidden space-y-4 mt-2 pb-4"></div>
     </main>
 
     <div id="floatingBottomSheet" class="flex flex-col gap-2">
@@ -91,10 +125,10 @@
 <input type="file" id="hiddenFileInput" accept="image/*" class="hidden" multiple>
 
 <script>
-    let currentMessages = [];
+    let chats = JSON.parse(localStorage.getItem('gpt_afnan_chats') || '{}');
+    let currentChatId = null;
+    let selectedModel = "deepseek-v4-flash";
     let attachedFiles = [];
-    let currentChatId = Date.now().toString();
-    let selectedModel = "DeepSeek V4 Pro";
 
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -102,12 +136,122 @@
     const welcomeSection = document.getElementById('welcomeSection');
     const hiddenFileInput = document.getElementById('hiddenFileInput');
     const attachmentPreviewArea = document.getElementById('attachmentPreviewArea');
+    const chatHistory = document.getElementById('chatHistory');
+
+    // --- Initialization ---
+    function init() {
+        renderHistory();
+        createNewChat();
+    }
+
+    function createNewChat() {
+        currentChatId = Date.now().toString();
+        chats[currentChatId] = {
+            id: currentChatId,
+            title: "محادثة جديدة",
+            model: selectedModel,
+            messages: [],
+            pinned: false,
+            timestamp: Date.now()
+        };
+        saveToLocal();
+        loadChat(currentChatId);
+    }
+
+    function loadChat(id) {
+        currentChatId = id;
+        const chat = chats[id];
+        selectedModel = chat.model;
+        document.getElementById('activeModelDisplay').textContent = selectedModel;
+        document.getElementById('welcomeModelDisplay').textContent = selectedModel;
+        
+        // Update active model in dropdown
+        document.querySelectorAll('.model-item').forEach(item => {
+            if (item.dataset.model === selectedModel) {
+                item.classList.add('active', 'text-white');
+            } else {
+                item.classList.remove('active', 'text-white');
+            }
+        });
+
+        chatSection.innerHTML = '';
+        if (chat.messages.length > 0) {
+            welcomeSection.classList.add('hidden');
+            chatSection.classList.remove('hidden');
+            chat.messages.forEach(msg => {
+                appendMessageToUI(msg.role, msg.text, msg.files || []);
+            });
+        } else {
+            welcomeSection.classList.remove('hidden');
+            chatSection.classList.add('hidden');
+        }
+        renderHistory();
+        scrollToBottom();
+    }
+
+    function saveToLocal() {
+        localStorage.setItem('gpt_afnan_chats', JSON.stringify(chats));
+    }
+
+    function renderHistory() {
+        chatHistory.innerHTML = '';
+        const sortedChats = Object.values(chats).sort((a, b) => {
+            if (a.pinned !== b.pinned) return b.pinned ? 1 : -1;
+            return b.timestamp - a.timestamp;
+        });
+
+        sortedChats.forEach(chat => {
+            const item = document.createElement('div');
+            item.className = `chat-history-item p-3 flex items-center justify-between group ${chat.id === currentChatId ? 'active' : ''}`;
+            item.onclick = () => loadChat(chat.id);
+            
+            item.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <i class="fa-regular fa-message text-[10px] text-gray-500"></i>
+                    <span class="text-[11px] font-bold text-gray-300 truncate w-32">${chat.title} ${chat.pinned ? '<i class="fa-solid fa-thumbtack pinned-badge ml-1"></i>' : ''}</span>
+                </div>
+                <div class="item-actions flex items-center gap-2">
+                    <button onclick="event.stopPropagation(); togglePin('${chat.id}')" class="text-gray-500 hover:text-amber-500"><i class="fa-solid fa-thumbtack text-[9px]"></i></button>
+                    <button onclick="event.stopPropagation(); renameChat('${chat.id}')" class="text-gray-500 hover:text-blue-500"><i class="fa-solid fa-pen text-[9px]"></i></button>
+                    <button onclick="event.stopPropagation(); deleteChat('${chat.id}')" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-trash text-[9px]"></i></button>
+                </div>
+            `;
+            chatHistory.appendChild(item);
+        });
+    }
+
+    // --- Actions ---
+    window.togglePin = (id) => {
+        chats[id].pinned = !chats[id].pinned;
+        saveToLocal();
+        renderHistory();
+    };
+
+    window.renameChat = (id) => {
+        const newTitle = prompt("أدخل الاسم الجديد للمحادثة:", chats[id].title);
+        if (newTitle) {
+            chats[id].title = newTitle;
+            saveToLocal();
+            renderHistory();
+        }
+    };
+
+    window.deleteChat = (id) => {
+        if (confirm("هل أنت متأكد من حذف هذه المحادثة؟")) {
+            delete chats[id];
+            saveToLocal();
+            if (currentChatId === id) createNewChat();
+            else renderHistory();
+        }
+    };
 
     // --- Sidebar & UI ---
     document.getElementById('menuBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); };
     document.getElementById('closeSidebarBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
     document.getElementById('sidebarOverlay').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
-    
+    document.getElementById('sidebarNewChatBtn').onclick = () => { createNewChat(); document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
+    document.getElementById('headerNewChatBtn').onclick = () => createNewChat();
+
     document.getElementById('modelTrigger').onclick = () => {
         const dropdown = document.getElementById('modelsDropdown');
         dropdown.classList.toggle('hidden');
@@ -116,13 +260,16 @@
 
     document.querySelectorAll('.model-item').forEach(item => {
         item.onclick = () => {
-            selectedModel = item.dataset.model;
-            document.getElementById('activeModelDisplay').textContent = selectedModel;
-            document.getElementById('welcomeModelDisplay').textContent = selectedModel;
-            document.querySelectorAll('.model-item').forEach(i => i.classList.remove('active', 'text-white'));
-            item.classList.add('active', 'text-white');
-            document.getElementById('modelsDropdown').classList.add('hidden');
-            document.getElementById('dropdownArrow').classList.remove('rotate-180');
+            const newModel = item.dataset.model;
+            if (newModel !== selectedModel) {
+                selectedModel = newModel;
+                document.getElementById('modelsDropdown').classList.add('hidden');
+                document.getElementById('dropdownArrow').classList.remove('rotate-180');
+                createNewChat(); // Always start new chat on model change as requested
+            } else {
+                document.getElementById('modelsDropdown').classList.add('hidden');
+                document.getElementById('dropdownArrow').classList.remove('rotate-180');
+            }
         };
     });
 
@@ -157,12 +304,16 @@
     promptInput.oninput = () => {
         promptInput.style.height = 'auto';
         promptInput.style.height = promptInput.scrollHeight + 'px';
+        updateSendBtnState();
+    };
+
+    function updateSendBtnState() {
         if (promptInput.value.trim() || attachedFiles.length > 0) {
             sendBtn.classList.remove('opacity-40', 'pointer-events-none');
         } else {
             sendBtn.classList.add('opacity-40', 'pointer-events-none');
         }
-    };
+    }
 
     sendBtn.onclick = async () => {
         const text = promptInput.value.trim();
@@ -171,108 +322,85 @@
         welcomeSection.classList.add('hidden');
         chatSection.classList.remove('hidden');
         
-        appendMessage('user', text, [...attachedFiles]);
-        const userMsg = { role: 'user', content: [] };
-        if (text) userMsg.content.push({ type: 'text', text: text });
-        attachedFiles.forEach(f => {
-            if (f.type.startsWith('image/')) userMsg.content.push({ type: 'image_url', image_url: { url: f.data } });
-        });
-        currentMessages.push(userMsg);
+        // Auto-rename chat if it's the first message
+        if (chats[currentChatId].messages.length === 0 && text) {
+            chats[currentChatId].title = text.substring(0, 25) + (text.length > 25 ? '...' : '');
+        }
 
+        const userFiles = [...attachedFiles];
+        appendMessageToUI('user', text, userFiles);
+        chats[currentChatId].messages.push({ role: 'user', text, files: userFiles });
+        chats[currentChatId].timestamp = Date.now();
+        
         promptInput.value = '';
         promptInput.style.height = 'auto';
         attachedFiles = [];
         renderPreviews();
-        sendBtn.classList.add('opacity-40', 'pointer-events-none');
+        updateSendBtnState();
+        saveToLocal();
+        renderHistory();
 
         const loading = appendLoading();
+        scrollToBottom();
 
         try {
+            const historyForAPI = chats[currentChatId].messages.map(m => {
+                const content = [];
+                if (m.text) content.push({ type: 'text', text: m.text });
+                if (m.files) m.files.forEach(f => {
+                    if (f.type.startsWith('image/')) content.push({ type: 'image_url', image_url: { url: f.data } });
+                });
+                return { role: m.role === 'user' ? 'user' : 'assistant', content };
+            });
+
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: currentMessages, model: selectedModel })
+                body: JSON.stringify({ messages: historyForAPI, model: selectedModel })
             });
             const data = await res.json();
             loading.remove();
+            
             const reply = data.choices[0].message.content;
-            appendMessage('bot', reply);
-            currentMessages.push({ role: 'assistant', content: reply });
-            saveChat();
+            appendMessageToUI('bot', reply);
+            chats[currentChatId].messages.push({ role: 'assistant', text: reply });
+            chats[currentChatId].timestamp = Date.now();
+            saveToLocal();
+            scrollToBottom();
         } catch (e) {
             loading.remove();
-            appendMessage('bot', "حدث خطأ في الاتصال بالخادم.");
+            appendMessageToUI('bot', "حدث خطأ في الاتصال بالخادم.");
         }
     };
 
-    function appendMessage(sender, text, files = []) {
+    function appendMessageToUI(sender, text, files = []) {
         const div = document.createElement('div');
-        div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in`;
+        div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
         let content = '';
         if (files.length > 0) {
-            files.forEach(f => content += `<img src="${f.data}" class="max-w-[200px] rounded-lg mb-2">`);
+            files.forEach(f => content += `<img src="${f.data}" class="max-w-[200px] rounded-lg mb-2 block">`);
         }
-        content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed">${text}</div>`;
-        div.innerHTML = content;
+        if (text) {
+            content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap">${text}</div>`;
+        }
+        div.innerHTML = `<div class="flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}">${content}</div>`;
         chatSection.appendChild(div);
-        document.getElementById('workspaceArea').scrollTop = document.getElementById('workspaceArea').scrollHeight;
     }
 
     function appendLoading() {
         const div = document.createElement('div');
-        div.className = "flex justify-start fade-in";
-        div.innerHTML = `<div class="bg-zinc-900 p-3 rounded-2xl text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i> جاري التفكير...</div>`;
+        div.className = "flex justify-start fade-in mb-4";
+        div.innerHTML = `<div class="bg-zinc-900 p-3 rounded-2xl text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري التفكير...</div>`;
         chatSection.appendChild(div);
         return div;
     }
 
-    function saveChat() {
-        const chats = JSON.parse(localStorage.getItem('afnan_chats_v2') || '{}');
-        chats[currentChatId] = { title: currentMessages[0].content[0]?.text || "محادثة جديدة", messages: currentMessages };
-        localStorage.setItem('afnan_chats_v2', JSON.stringify(chats));
-        renderHistory();
+    function scrollToBottom() {
+        const area = document.getElementById('workspaceArea');
+        area.scrollTop = area.scrollHeight;
     }
 
-    function renderHistory() {
-        const history = document.getElementById('chatHistory');
-        history.innerHTML = '';
-        const chats = JSON.parse(localStorage.getItem('afnan_chats_v2') || '{}');
-        Object.keys(chats).reverse().forEach(id => {
-            const div = document.createElement('div');
-            div.className = "p-2 bg-zinc-900/40 rounded-lg text-[10px] text-gray-400 cursor-pointer hover:bg-zinc-800 transition truncate";
-            div.textContent = chats[id].title;
-            div.onclick = () => loadChat(id);
-            history.appendChild(div);
-        });
-    }
-
-    function loadChat(id) {
-        const chats = JSON.parse(localStorage.getItem('afnan_chats_v2') || '{}');
-        currentChatId = id;
-        currentMessages = chats[id].messages;
-        chatSection.innerHTML = '';
-        welcomeSection.classList.add('hidden');
-        chatSection.classList.remove('hidden');
-        currentMessages.forEach(m => {
-            const text = typeof m.content === 'string' ? m.content : m.content.find(c => c.type === 'text')?.text || '';
-            const imgs = Array.isArray(m.content) ? m.content.filter(c => c.type === 'image_url').map(c => ({ data: c.image_url.url })) : [];
-            appendMessage(m.role === 'user' ? 'user' : 'bot', text, imgs);
-        });
-        document.getElementById('sidebarDrawer').classList.remove('open');
-        document.getElementById('sidebarOverlay').classList.remove('show');
-    }
-
-    document.getElementById('sidebarNewChatBtn').onclick = document.getElementById('headerNewChatBtn').onclick = () => {
-        currentChatId = Date.now().toString();
-        currentMessages = [];
-        chatSection.innerHTML = '';
-        welcomeSection.classList.remove('hidden');
-        chatSection.classList.add('hidden');
-        document.getElementById('sidebarDrawer').classList.remove('open');
-        document.getElementById('sidebarOverlay').classList.remove('show');
-    };
-
-    renderHistory();
+    init();
 </script>
 </body>
 </html>
