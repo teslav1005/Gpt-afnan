@@ -39,7 +39,7 @@
     <header class="flex justify-between items-center p-4 z-20 backdrop-blur-md bg-black/40 sticky top-0 border-b border-white/5">
         <a href="chat.html" class="text-white w-9 h-9 flex items-center justify-center bg-zinc-900 rounded-full"><i class="fa-solid fa-arrow-right"></i></a>
         <h1 class="text-md font-bold">مصر الذكيه <span class="text-[9px] bg-white text-black px-1.5 py-0.5 rounded-full font-extrabold">IMAGE</span></h1>
-        <button id="newChatBtn" class="text-white px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-plus-circle"></i> جديد</button>
+        <button id="loginHeaderBtn" class="bg-white text-black border-none px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition hover:bg-gray-200"><i class="fa-solid fa-sign-in-alt text-xs ml-1"></i>تسجيل الدخول</button>
     </header>
 
     <main id="workspaceArea" class="p-4 no-scrollbar">
@@ -165,18 +165,25 @@
     const optionsArea = document.getElementById('optionsArea');
     const resultsContainer = document.getElementById('resultsContainer');
     const loginModal = document.getElementById('loginModal');
+    const loginHeaderBtn = document.getElementById('loginHeaderBtn');
 
     // Check authentication
     auth.onAuthStateChanged((user) => {
         if (user) {
             isUserLoggedIn = true;
+            if (loginHeaderBtn) loginHeaderBtn.style.display = 'none';
         } else {
             isUserLoggedIn = false;
+            if (loginHeaderBtn) loginHeaderBtn.style.display = 'flex';
         }
     });
 
     function redirectToLogin() {
         window.location.href = 'login.html';
+    }
+
+    if (loginHeaderBtn) {
+        loginHeaderBtn.onclick = () => redirectToLogin();
     }
 
     // UI Toggle

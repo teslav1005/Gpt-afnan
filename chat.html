@@ -17,16 +17,16 @@
         #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth; }
         #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 24px; padding: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 20; }
         textarea { resize: none; overflow-y: auto; min-height: 24px; max-height: 100px; line-height: 1.4; }
-        #sidebarDrawer { position: absolute; top: 0; right: -100%; width: 75%; max-width: 320px; height: 100%; background-color: var(--sidebar-bg); z-index: 50; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255, 255, 255, 0.08); }
+        #sidebarDrawer { position: fixed; top: 0; right: -100%; width: 75%; max-width: 320px; height: 100%; background-color: var(--sidebar-bg); z-index: 50; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255, 255, 255, 0.08); }
         #sidebarDrawer.open { right: 0; }
-        #sidebarOverlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.6); z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        #sidebarOverlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         #sidebarOverlay.show { opacity: 1; pointer-events: auto; }
         .preview-slot { width: 50px; height: 50px; border-radius: 8px; background-size: cover; background-position: center; position: relative; border: 1px solid rgba(255,255,255,0.2); }
         .model-item { transition: all 0.2s ease; cursor: pointer; }
         .model-item:hover, .model-item.active { background-color: rgba(255, 255, 255, 0.08); }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .chat-history-item { position: relative; transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; border: 1px solid transparent; }
+        .chat-history-item { position: relative; transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; border: 1px solid transparent; padding: 8px 12px; }
         .chat-history-item.active { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
         .chat-history-item:hover .item-actions { opacity: 1; }
         .item-actions { opacity: 0; transition: opacity 0.2s; }
@@ -40,6 +40,8 @@
         .modal-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; font-family: 'Cairo', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .modal-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
         .message-counter { font-size: 11px; color: rgba(255, 255, 255, 0.5); text-align: center; margin-top: 12px; }
+        .login-header-btn { background: white; color: black; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Cairo', sans-serif; }
+        .login-header-btn:hover { background: #f0f0f0; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -83,7 +85,7 @@
                 <span id="activeModelDisplay">deepseek-v4-flash</span><i id="dropdownArrow" class="fa-solid fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200"></i>
             </div>
             <div class="flex items-center gap-1.5">
-                <button id="headerNewChatBtn" class="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center bg-zinc-900/50 rounded-full transition"><i class="fa-solid fa-circle-plus text-xs"></i></button>
+                <button id="loginHeaderBtn" class="login-header-btn"><i class="fa-solid fa-sign-in-alt text-xs ml-1"></i>تسجيل الدخول</button>
             </div>
         </div>
         <div id="modelsDropdown" class="hidden absolute top-full left-4 right-4 bg-[#141417]/95 backdrop-blur-lg border border-white/10 rounded-2xl p-2 mt-1.5 shadow-2xl z-50 max-h-[350px] overflow-y-auto no-scrollbar">
@@ -181,7 +183,7 @@
     let selectedModel = "deepseek-v4-flash";
     let attachedFiles = [];
     let isUserLoggedIn = false;
-    let messageCountForFlash = 0;
+    let messageCountForCurrentModel = 0;
 
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -192,6 +194,7 @@
     const chatHistory = document.getElementById('chatHistory');
     const loginModal = document.getElementById('loginModal');
     const messageCounter = document.getElementById('messageCounter');
+    const loginHeaderBtn = document.getElementById('loginHeaderBtn');
 
     // Check authentication status
     auth.onAuthStateChanged((user) => {
@@ -199,6 +202,7 @@
             isUserLoggedIn = true;
             document.getElementById('userName').textContent = user.displayName || 'المستخدم';
             document.getElementById('userEmail').textContent = user.email || 'مسجل دخول';
+            loginHeaderBtn.style.display = 'none';
             if (user.photoURL) {
                 document.getElementById('userAvatar').style.backgroundImage = `url(${user.photoURL})`;
                 document.getElementById('userAvatar').style.backgroundSize = 'cover';
@@ -206,13 +210,15 @@
             }
         } else {
             isUserLoggedIn = false;
-            window.location.href = 'login.html';
+            loginHeaderBtn.style.display = 'flex';
         }
     });
 
     function redirectToLogin() {
         window.location.href = 'login.html';
     }
+
+    loginHeaderBtn.onclick = () => redirectToLogin();
 
     function logout() {
         auth.signOut().then(() => {
@@ -237,7 +243,7 @@
             pinned: false,
             timestamp: Date.now()
         };
-        messageCountForFlash = 0;
+        messageCountForCurrentModel = 0;
         updateMessageCounter();
         saveToLocal();
         loadChat(currentChatId);
@@ -250,17 +256,15 @@
         document.getElementById('activeModelDisplay').textContent = selectedModel;
         document.getElementById('welcomeModelDisplay').textContent = selectedModel;
         
-        // Count messages for Flash model
-        if (selectedModel === "deepseek-v4-flash") {
-            messageCountForFlash = chat.messages.filter(m => m.role === 'user').length;
-        }
+        // Count messages for current model
+        messageCountForCurrentModel = chat.messages.filter(m => m.role === 'user').length;
         updateMessageCounter();
 
         document.querySelectorAll('.model-item').forEach(item => {
             if (item.dataset.model === selectedModel) {
-                item.classList.add('active', 'text-white');
+                item.classList.add('active');
             } else {
-                item.classList.remove('active', 'text-white');
+                item.classList.remove('active');
             }
         });
 
@@ -276,13 +280,13 @@
             chatSection.classList.add('hidden');
         }
         renderHistory();
-        scrollToBottom();
+        setTimeout(() => scrollToBottom(), 100);
     }
 
     function updateMessageCounter() {
-        if (selectedModel === "deepseek-v4-flash" && !isUserLoggedIn) {
+        if (!isUserLoggedIn) {
             messageCounter.classList.remove('hidden');
-            messageCounter.textContent = `${messageCountForFlash} / 4 رسائل مجانية`;
+            messageCounter.textContent = `${messageCountForCurrentModel} / 4 رسائل مجانية`;
         } else {
             messageCounter.classList.add('hidden');
         }
@@ -301,18 +305,20 @@
 
         sortedChats.forEach(chat => {
             const item = document.createElement('div');
-            item.className = `chat-history-item p-3 flex items-center justify-between group ${chat.id === currentChatId ? 'active' : ''}`;
-            item.onclick = () => loadChat(chat.id);
+            item.className = `chat-history-item flex items-center justify-between group ${chat.id === currentChatId ? 'active' : ''}`;
+            item.onclick = (e) => {
+                if (!e.target.closest('.item-actions')) loadChat(chat.id);
+            };
             
             item.innerHTML = `
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <i class="fa-regular fa-message text-[10px] text-gray-500"></i>
-                    <span class="text-[11px] font-bold text-gray-300 truncate w-32">${chat.title} ${chat.pinned ? '<i class="fa-solid fa-thumbtack pinned-badge ml-1"></i>' : ''}</span>
+                <div class="flex items-center gap-2 overflow-hidden flex-1">
+                    <i class="fa-regular fa-message text-[10px] text-gray-500 flex-shrink-0"></i>
+                    <span class="text-[11px] font-bold text-gray-300 truncate">${chat.title} ${chat.pinned ? '<i class="fa-solid fa-thumbtack pinned-badge ml-1"></i>' : ''}</span>
                 </div>
-                <div class="item-actions flex items-center gap-2">
-                    <button onclick="event.stopPropagation(); togglePin('${chat.id}')" class="text-gray-500 hover:text-amber-500"><i class="fa-solid fa-thumbtack text-[9px]"></i></button>
-                    <button onclick="event.stopPropagation(); renameChat('${chat.id}')" class="text-gray-500 hover:text-blue-500"><i class="fa-solid fa-pen text-[9px]"></i></button>
-                    <button onclick="event.stopPropagation(); deleteChat('${chat.id}')" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-trash text-[9px]"></i></button>
+                <div class="item-actions flex items-center gap-1 flex-shrink-0">
+                    <button onclick="event.stopPropagation(); togglePin('${chat.id}')" class="text-gray-500 hover:text-amber-500 text-[9px] w-6 h-6 flex items-center justify-center"><i class="fa-solid fa-thumbtack"></i></button>
+                    <button onclick="event.stopPropagation(); renameChat('${chat.id}')" class="text-gray-500 hover:text-blue-500 text-[9px] w-6 h-6 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="event.stopPropagation(); deleteChat('${chat.id}')" class="text-gray-500 hover:text-red-500 text-[9px] w-6 h-6 flex items-center justify-center"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
             chatHistory.appendChild(item);
@@ -327,8 +333,8 @@
 
     window.renameChat = (id) => {
         const newTitle = prompt("أدخل الاسم الجديد للمحادثة:", chats[id].title);
-        if (newTitle) {
-            chats[id].title = newTitle;
+        if (newTitle && newTitle.trim()) {
+            chats[id].title = newTitle.trim();
             saveToLocal();
             renderHistory();
         }
@@ -344,11 +350,23 @@
     };
 
     // UI Events
-    document.getElementById('menuBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); };
-    document.getElementById('closeSidebarBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
-    document.getElementById('sidebarOverlay').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
-    document.getElementById('sidebarNewChatBtn').onclick = () => { createNewChat(); document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
-    document.getElementById('headerNewChatBtn').onclick = () => createNewChat();
+    document.getElementById('menuBtn').onclick = () => { 
+        document.getElementById('sidebarDrawer').classList.add('open'); 
+        document.getElementById('sidebarOverlay').classList.add('show'); 
+    };
+    document.getElementById('closeSidebarBtn').onclick = () => { 
+        document.getElementById('sidebarDrawer').classList.remove('open'); 
+        document.getElementById('sidebarOverlay').classList.remove('show'); 
+    };
+    document.getElementById('sidebarOverlay').onclick = () => { 
+        document.getElementById('sidebarDrawer').classList.remove('open'); 
+        document.getElementById('sidebarOverlay').classList.remove('show'); 
+    };
+    document.getElementById('sidebarNewChatBtn').onclick = () => { 
+        createNewChat(); 
+        document.getElementById('sidebarDrawer').classList.remove('open'); 
+        document.getElementById('sidebarOverlay').classList.remove('show'); 
+    };
 
     document.getElementById('modelTrigger').onclick = () => {
         const dropdown = document.getElementById('modelsDropdown');
@@ -390,9 +408,9 @@
         else attachmentPreviewArea.classList.add('hidden');
         attachedFiles.forEach((f, i) => {
             const div = document.createElement('div');
-            div.className = "preview-slot flex-shrink-0";
+            div.className = "preview-slot flex-shrink-0 relative";
             div.style.backgroundImage = `url(${f.data})`;
-            div.innerHTML = `<button class="absolute -top-1 -right-1 bg-black rounded-full w-4 h-4 text-[10px]" onclick="removeFile(${i})">×</button>`;
+            div.innerHTML = `<button class="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 text-[10px] text-white flex items-center justify-center" onclick="removeFile(${i})">×</button>`;
             attachmentPreviewArea.appendChild(div);
         });
     }
@@ -401,7 +419,7 @@
     // Chat logic
     promptInput.oninput = () => {
         promptInput.style.height = 'auto';
-        promptInput.style.height = promptInput.scrollHeight + 'px';
+        promptInput.style.height = Math.min(promptInput.scrollHeight, 100) + 'px';
         updateSendBtnState();
     };
 
@@ -417,8 +435,8 @@
         const text = promptInput.value.trim();
         if (!text && attachedFiles.length === 0) return;
 
-        // Check message limit for Flash model without login
-        if (selectedModel === "deepseek-v4-flash" && !isUserLoggedIn && messageCountForFlash >= 4) {
+        // Check message limit for non-logged-in users (4 messages for all models)
+        if (!isUserLoggedIn && messageCountForCurrentModel >= 4) {
             loginModal.classList.add('show');
             return;
         }
@@ -435,9 +453,7 @@
         chats[currentChatId].messages.push({ role: 'user', text, files: userFiles });
         chats[currentChatId].timestamp = Date.now();
         
-        if (selectedModel === "deepseek-v4-flash") {
-            messageCountForFlash++;
-        }
+        messageCountForCurrentModel++;
         updateMessageCounter();
         
         promptInput.value = '';
@@ -455,9 +471,13 @@
             const historyForAPI = chats[currentChatId].messages.map(m => {
                 const content = [];
                 if (m.text) content.push({ type: 'text', text: m.text });
-                if (m.files) m.files.forEach(f => {
-                    if (f.type.startsWith('image/')) content.push({ type: 'image_url', image_url: { url: f.data } });
-                });
+                if (m.files && m.files.length > 0) {
+                    m.files.forEach(f => {
+                        if (f.type.startsWith('image/')) {
+                            content.push({ type: 'image_url', image_url: { url: f.data } });
+                        }
+                    });
+                }
                 return { role: m.role === 'user' ? 'user' : 'assistant', content };
             });
 
@@ -466,18 +486,24 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ messages: historyForAPI, model: selectedModel })
             });
+
+            if (!res.ok) {
+                throw new Error(`API Error: ${res.status}`);
+            }
+
             const data = await res.json();
             loading.remove();
             
-            const reply = data.choices[0].message.content;
+            const reply = data.choices ? data.choices[0].message.content : data.message || "حدث خطأ في الحصول على الرد";
             appendMessageToUI('bot', reply);
             chats[currentChatId].messages.push({ role: 'assistant', text: reply });
             chats[currentChatId].timestamp = Date.now();
             saveToLocal();
             scrollToBottom();
         } catch (e) {
+            console.error('Error:', e);
             loading.remove();
-            appendMessageToUI('bot', "حدث خطأ في الاتصال بالخادم.");
+            appendMessageToUI('bot', "حدث خطأ في الاتصال بالخادم: " + e.message);
         }
     };
 
@@ -485,11 +511,15 @@
         const div = document.createElement('div');
         div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} fade-in mb-4`;
         let content = '';
-        if (files.length > 0) {
-            files.forEach(f => content += `<img src="${f.data}" class="max-w-[200px] rounded-lg mb-2 block">`);
+        if (files && files.length > 0) {
+            files.forEach(f => {
+                if (f.type && f.type.startsWith('image/')) {
+                    content += `<img src="${f.data}" class="max-w-[200px] rounded-lg mb-2 block">`;
+                }
+            });
         }
         if (text) {
-            content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap">${text}</div>`;
+            content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap break-words">${text}</div>`;
         }
         div.innerHTML = `<div class="flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}">${content}</div>`;
         chatSection.appendChild(div);
@@ -505,8 +535,20 @@
 
     function scrollToBottom() {
         const area = document.getElementById('workspaceArea');
-        area.scrollTop = area.scrollHeight;
+        setTimeout(() => {
+            area.scrollTop = area.scrollHeight;
+        }, 50);
     }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('modelsDropdown');
+        const trigger = document.getElementById('modelTrigger');
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+            document.getElementById('dropdownArrow').classList.remove('rotate-180');
+        }
+    });
 
     init();
 </script>
