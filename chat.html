@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <style>
         :root { --app-bg: #050505; --sheet-bg: #121214; --sidebar-bg: #0d0d0f; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
@@ -29,6 +31,15 @@
         .chat-history-item:hover .item-actions { opacity: 1; }
         .item-actions { opacity: 0; transition: opacity 0.2s; }
         .pinned-badge { color: #f59e0b; font-size: 8px; }
+        .login-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .login-modal.show { display: flex; }
+        .glassmorphic-modal { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 32px 24px; max-width: 320px; text-align: center; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .modal-subtitle { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 24px; line-height: 1.5; }
+        .modal-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; font-family: 'Cairo', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .modal-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+        .message-counter { font-size: 11px; color: rgba(255, 255, 255, 0.5); text-align: center; margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -50,11 +61,18 @@
                 <a href="Image.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-regular fa-image text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الصور</span></a>
                 <a href="Video.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-solid fa-clapperboard text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الفيديو</span></a>
             </div>
+
+            <div class="pt-2 border-t border-white/5 text-[10px] text-gray-500 text-center">
+                <i class="fa-solid fa-flag-egypt text-amber-500 ml-1"></i> Made in Egypt
+            </div>
         </div>
         <div class="pt-4 border-t border-white/5 flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-white font-bold text-xs">U</div>
-            <div class="flex flex-col"><span class="text-xs font-bold text-white">الحساب الشخصي</span><span class="text-[9px] text-gray-500">مطور برمجيات</span></div>
-            <i class="fa-solid fa-gear text-gray-500 text-xs mr-auto cursor-pointer hover:text-white"></i>
+            <div id="userAvatar" class="w-9 h-9 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-white font-bold text-xs">U</div>
+            <div class="flex flex-col flex-1 min-w-0">
+                <span id="userName" class="text-xs font-bold text-white truncate">الحساب الشخصي</span>
+                <span id="userEmail" class="text-[9px] text-gray-500 truncate">مطور برمجيات</span>
+            </div>
+            <button id="logoutBtn" class="text-gray-500 hover:text-red-500 text-xs cursor-pointer transition" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i></button>
         </div>
     </div>
     
@@ -120,15 +138,50 @@
             <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white placeholder-gray-500" placeholder="اسأل أو اكتب ما تريد هنا..."></textarea>
             <button id="sendBtn" class="bg-white text-black rounded-full w-9 h-9 flex-shrink-0 flex items-center justify-center opacity-40 transition-all duration-300 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs translate-x-[-1px] translate-y-[1px]"></i></button>
         </div>
+        <div id="messageCounter" class="message-counter hidden"></div>
     </div>
 </div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="login-modal">
+    <div class="glassmorphic-modal">
+        <div class="modal-title">يجب تسجيل الدخول</div>
+        <div class="modal-subtitle">لقد وصلت إلى حد الرسائل المجانية. يرجى تسجيل الدخول للمتابعة</div>
+        <button class="modal-btn" onclick="redirectToLogin()">
+            <i class="fa-solid fa-sign-in-alt"></i>
+            <span>تسجيل الدخول</span>
+        </button>
+    </div>
+</div>
+
 <input type="file" id="hiddenFileInput" accept="image/*" class="hidden" multiple>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+
 <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBA3w0gv38P6Ry_m3sMwXI-l-_NGuWKCUA",
+        authDomain: "flow-afnan.firebaseapp.com",
+        databaseURL: "https://flow-afnan-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "flow-afnan",
+        storageBucket: "flow-afnan.firebasestorage.app",
+        messagingSenderId: "730735289702",
+        appId: "1:730735289702:web:5b21d8fa380cb09e0f54a7",
+        measurementId: "G-90ZX8YBJ6D"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
     let chats = JSON.parse(localStorage.getItem('gpt_afnan_chats') || '{}');
     let currentChatId = null;
     let selectedModel = "deepseek-v4-flash";
     let attachedFiles = [];
+    let isUserLoggedIn = false;
+    let messageCountForFlash = 0;
 
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -137,8 +190,38 @@
     const hiddenFileInput = document.getElementById('hiddenFileInput');
     const attachmentPreviewArea = document.getElementById('attachmentPreviewArea');
     const chatHistory = document.getElementById('chatHistory');
+    const loginModal = document.getElementById('loginModal');
+    const messageCounter = document.getElementById('messageCounter');
 
-    // --- Initialization ---
+    // Check authentication status
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            isUserLoggedIn = true;
+            document.getElementById('userName').textContent = user.displayName || 'المستخدم';
+            document.getElementById('userEmail').textContent = user.email || 'مسجل دخول';
+            if (user.photoURL) {
+                document.getElementById('userAvatar').style.backgroundImage = `url(${user.photoURL})`;
+                document.getElementById('userAvatar').style.backgroundSize = 'cover';
+                document.getElementById('userAvatar').textContent = '';
+            }
+        } else {
+            isUserLoggedIn = false;
+            window.location.href = 'login.html';
+        }
+    });
+
+    function redirectToLogin() {
+        window.location.href = 'login.html';
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('gpt_afnan_user');
+            window.location.href = 'login.html';
+        });
+    }
+
+    // Initialization
     function init() {
         renderHistory();
         createNewChat();
@@ -154,6 +237,8 @@
             pinned: false,
             timestamp: Date.now()
         };
+        messageCountForFlash = 0;
+        updateMessageCounter();
         saveToLocal();
         loadChat(currentChatId);
     }
@@ -165,7 +250,12 @@
         document.getElementById('activeModelDisplay').textContent = selectedModel;
         document.getElementById('welcomeModelDisplay').textContent = selectedModel;
         
-        // Update active model in dropdown
+        // Count messages for Flash model
+        if (selectedModel === "deepseek-v4-flash") {
+            messageCountForFlash = chat.messages.filter(m => m.role === 'user').length;
+        }
+        updateMessageCounter();
+
         document.querySelectorAll('.model-item').forEach(item => {
             if (item.dataset.model === selectedModel) {
                 item.classList.add('active', 'text-white');
@@ -187,6 +277,15 @@
         }
         renderHistory();
         scrollToBottom();
+    }
+
+    function updateMessageCounter() {
+        if (selectedModel === "deepseek-v4-flash" && !isUserLoggedIn) {
+            messageCounter.classList.remove('hidden');
+            messageCounter.textContent = `${messageCountForFlash} / 4 رسائل مجانية`;
+        } else {
+            messageCounter.classList.add('hidden');
+        }
     }
 
     function saveToLocal() {
@@ -220,7 +319,6 @@
         });
     }
 
-    // --- Actions ---
     window.togglePin = (id) => {
         chats[id].pinned = !chats[id].pinned;
         saveToLocal();
@@ -245,7 +343,7 @@
         }
     };
 
-    // --- Sidebar & UI ---
+    // UI Events
     document.getElementById('menuBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); };
     document.getElementById('closeSidebarBtn').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
     document.getElementById('sidebarOverlay').onclick = () => { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
@@ -265,7 +363,7 @@
                 selectedModel = newModel;
                 document.getElementById('modelsDropdown').classList.add('hidden');
                 document.getElementById('dropdownArrow').classList.remove('rotate-180');
-                createNewChat(); // Always start new chat on model change as requested
+                createNewChat();
             } else {
                 document.getElementById('modelsDropdown').classList.add('hidden');
                 document.getElementById('dropdownArrow').classList.remove('rotate-180');
@@ -273,7 +371,7 @@
         };
     });
 
-    // --- Files ---
+    // File handling
     document.getElementById('attachBtn').onclick = () => hiddenFileInput.click();
     hiddenFileInput.onchange = (e) => {
         Array.from(e.target.files).forEach(file => {
@@ -300,7 +398,7 @@
     }
     window.removeFile = (i) => { attachedFiles.splice(i, 1); renderPreviews(); };
 
-    // --- Chat Logic ---
+    // Chat logic
     promptInput.oninput = () => {
         promptInput.style.height = 'auto';
         promptInput.style.height = promptInput.scrollHeight + 'px';
@@ -319,10 +417,15 @@
         const text = promptInput.value.trim();
         if (!text && attachedFiles.length === 0) return;
 
+        // Check message limit for Flash model without login
+        if (selectedModel === "deepseek-v4-flash" && !isUserLoggedIn && messageCountForFlash >= 4) {
+            loginModal.classList.add('show');
+            return;
+        }
+
         welcomeSection.classList.add('hidden');
         chatSection.classList.remove('hidden');
         
-        // Auto-rename chat if it's the first message
         if (chats[currentChatId].messages.length === 0 && text) {
             chats[currentChatId].title = text.substring(0, 25) + (text.length > 25 ? '...' : '');
         }
@@ -331,6 +434,11 @@
         appendMessageToUI('user', text, userFiles);
         chats[currentChatId].messages.push({ role: 'user', text, files: userFiles });
         chats[currentChatId].timestamp = Date.now();
+        
+        if (selectedModel === "deepseek-v4-flash") {
+            messageCountForFlash++;
+        }
+        updateMessageCounter();
         
         promptInput.value = '';
         promptInput.style.height = 'auto';

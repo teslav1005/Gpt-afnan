@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <style>
         :root { --app-bg: #050505; --sheet-bg: #121214; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
@@ -22,6 +24,14 @@
         #modelSelectModal.active { opacity: 1; pointer-events: auto; }
         #modelSelectContent { transition: transform 0.3s; transform: translateY(100%); }
         #modelSelectModal.active #modelSelectContent { transform: translateY(0); }
+        .login-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .login-modal.show { display: flex; }
+        .glassmorphic-modal { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 32px 24px; max-width: 320px; text-align: center; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .modal-subtitle { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 24px; line-height: 1.5; }
+        .modal-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; font-family: 'Cairo', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .modal-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -112,7 +122,38 @@
     </div>
 </div>
 
+<!-- Login Modal -->
+<div id="loginModal" class="login-modal">
+    <div class="glassmorphic-modal">
+        <div class="modal-title">يجب تسجيل الدخول</div>
+        <div class="modal-subtitle">لا يمكنك توليد الصور بدون تسجيل الدخول</div>
+        <button class="modal-btn" onclick="redirectToLogin()">
+            <i class="fa-solid fa-sign-in-alt"></i>
+            <span>تسجيل الدخول</span>
+        </button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+
 <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBA3w0gv38P6Ry_m3sMwXI-l-_NGuWKCUA",
+        authDomain: "flow-afnan.firebaseapp.com",
+        databaseURL: "https://flow-afnan-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "flow-afnan",
+        storageBucket: "flow-afnan.firebasestorage.app",
+        messagingSenderId: "730735289702",
+        appId: "1:730735289702:web:5b21d8fa380cb09e0f54a7",
+        measurementId: "G-90ZX8YBJ6D"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    let isUserLoggedIn = false;
     let selectedModel = "flux";
     let selectedRatio = "1:1";
     let selectedCount = 1;
@@ -123,6 +164,20 @@
     const sendBtn = document.getElementById('sendBtn');
     const optionsArea = document.getElementById('optionsArea');
     const resultsContainer = document.getElementById('resultsContainer');
+    const loginModal = document.getElementById('loginModal');
+
+    // Check authentication
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            isUserLoggedIn = true;
+        } else {
+            isUserLoggedIn = false;
+        }
+    });
+
+    function redirectToLogin() {
+        window.location.href = 'login.html';
+    }
 
     // UI Toggle
     document.getElementById('toggleSettingsBtn').onclick = () => optionsArea.classList.toggle('collapsed');
@@ -211,6 +266,12 @@
     };
 
     sendBtn.onclick = async () => {
+        // Check if user is logged in
+        if (!isUserLoggedIn) {
+            loginModal.classList.add('show');
+            return;
+        }
+
         const prompt = promptInput.value.trim();
         document.getElementById('inspirationSection').classList.add('hidden');
         document.getElementById('chatSection').classList.remove('hidden');
@@ -233,6 +294,16 @@
             resultsContainer.appendChild(card);
         }
 
+        // Save to history
+        const history = JSON.parse(localStorage.getItem('gpt_afnan_image_history') || '[]');
+        history.unshift({
+            id: Date.now(),
+            prompt: prompt,
+            model: selectedModel,
+            timestamp: new Date().toLocaleString('ar-EG')
+        });
+        localStorage.setItem('gpt_afnan_image_history', JSON.stringify(history.slice(0, 50)));
+
         try {
             const validImages = attachedImages.filter(img => img !== null);
             const res = await fetch('/api/image', {
@@ -254,13 +325,7 @@
                 const actions = document.querySelectorAll('.success-actions');
                 const downloadBtns = document.querySelectorAll('.download-btn');
 
-                // In this implementation, we handle multiple images
-                // If the API returns one URL but requested N, we show it N times or handle accordingly
-                // Based on Pollinations, we might get one URL or multiple
-                
                 imgElements.forEach((img, idx) => {
-                    // For demo/simplicity, if API returns one URL, we use it. 
-                    // In a real multi-image API, data.images would be an array.
                     const url = data.imageUrls ? data.imageUrls[idx] : data.imageUrl;
                     img.src = url + (selectedCount > 1 ? `&seed=${Math.random()}` : ''); 
                     img.onload = () => {
