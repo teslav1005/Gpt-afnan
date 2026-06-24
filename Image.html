@@ -10,13 +10,13 @@
     <style>
         :root { --app-bg: #050505; --sheet-bg: #121214; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
-        .app-container { max-width: 480px; margin: 0 auto; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
+        .app-container { width: 100%; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 200px; }
-        #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 28px; padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 40; transition: all 0.4s; }
+        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: clamp(150px, 20vw, 280px); }
+        #floatingBottomSheet { position: absolute; bottom: clamp(5px, 2vw, 15px); left: clamp(5px, 2vw, 15px); right: clamp(5px, 2vw, 15px); background-color: var(--sheet-bg); border-radius: clamp(16px, 4vw, 28px); padding: clamp(8px, 2vw, 15px); box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 40; transition: all 0.4s; }
         #optionsArea.collapsed { max-height: 0; opacity: 0; overflow: hidden; margin: 0; }
-        textarea { resize: none; min-height: 24px; max-height: 100px; }
-        .image-slot { width: 50px; height: 50px; border: 1px dashed #3f3f46; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #18181b; flex-shrink: 0; background-size: cover; background-position: center; cursor: pointer; position: relative; }
+        textarea { resize: none; min-height: 24px; max-height: 100px; font-size: clamp(12px, 2vw, 16px); }
+        .image-slot { width: clamp(40px, 10vw, 70px); height: clamp(40px, 10vw, 70px); border: 1px dashed #3f3f46; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #18181b; flex-shrink: 0; background-size: cover; background-position: center; cursor: pointer; position: relative; }
         .image-slot.has-image { border-style: solid; border-color: #71717a; }
         .remove-img { position: absolute; -top: 5px; -right: 5px; background: #ef4444; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
         #modelSelectModal.active { opacity: 1; pointer-events: auto; }
@@ -26,23 +26,23 @@
 </head>
 <body>
 <div class="app-container">
-    <header class="flex justify-between items-center p-4 z-20 backdrop-blur-md bg-black/40 sticky top-0 border-b border-white/5">
-        <a href="chat.html" class="text-white w-9 h-9 flex items-center justify-center bg-zinc-900 rounded-full"><i class="fa-solid fa-arrow-right"></i></a>
-        <h1 class="text-md font-bold">مصر الذكيه <span class="text-[9px] bg-white text-black px-1.5 py-0.5 rounded-full font-extrabold">IMAGE</span></h1>
-        <button id="newChatBtn" class="text-white px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-plus-circle"></i> جديد</button>
+    <header class="flex justify-between items-center p-3 md:p-4 z-20 backdrop-blur-md bg-black/40 sticky top-0 border-b border-white/5">
+        <a href="chat.html" class="text-white w-8 md:w-9 h-8 md:h-9 flex items-center justify-center bg-zinc-900 rounded-full"><i class="fa-solid fa-arrow-right text-xs md:text-sm"></i></a>
+        <h1 class="text-sm md:text-base font-bold">مصر الذكيه <span class="text-[8px] md:text-[9px] bg-white text-black px-1.5 py-0.5 rounded-full font-extrabold">IMAGE</span></h1>
+        <button id="newChatBtn" class="text-white px-2 md:px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-plus-circle text-xs"></i> <span class="hidden sm:inline">جديد</span></button>
     </header>
 
-    <main id="workspaceArea" class="p-4 no-scrollbar">
-        <div id="inspirationSection" class="space-y-4">
-            <span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-sparkles text-white ml-1"></i> فكرة ملهمة لتبدأ بها</span>
-            <div class="grid grid-cols-2 gap-3">
-                <img src="https://gen.pollinations.ai/image/cyberpunk%20egyptian%20pharaoh?model=flux" class="rounded-xl border border-white/5">
-                <img src="https://gen.pollinations.ai/image/ancient%20cairo%20futuristic?model=flux" class="rounded-xl border border-white/5">
+    <main id="workspaceArea" class="p-3 md:p-4 no-scrollbar">
+        <div id="inspirationSection" class="space-y-3 md:space-y-4">
+            <span class="text-xs font-bold text-gray-400"><i class="fa-solid fa-sparkles text-white ml-1"></i> فكرة ملهمة لتبدأ بها</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <img src="https://gen.pollinations.ai/image/cyberpunk%20egyptian%20pharaoh?model=flux" class="rounded-xl border border-white/5 w-full h-auto">
+                <img src="https://gen.pollinations.ai/image/ancient%20cairo%20futuristic?model=flux" class="rounded-xl border border-white/5 w-full h-auto">
             </div>
         </div>
         <div id="chatSection" class="hidden space-y-4">
-            <div class="bg-zinc-800 p-3 rounded-2xl rounded-tr-none text-xs max-w-[85%]"><p id="submittedPromptText" class="font-semibold"></p></div>
-            <div id="resultsContainer" class="grid grid-cols-1 gap-4">
+            <div class="bg-zinc-800 p-3 md:p-4 rounded-2xl rounded-tr-none text-xs md:text-sm max-w-full md:max-w-[85%]"><p id="submittedPromptText" class="font-semibold"></p></div>
+            <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Generated images will appear here -->
             </div>
         </div>
@@ -54,7 +54,7 @@
                 <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-paperclip ml-1"></i> الصور المرفقة (بحد أقصى 3)</span>
                 <span id="imgCounter" class="text-[10px] text-gray-500">0/3</span>
             </div>
-            <div class="flex gap-2" id="imageSlotsContainer">
+            <div class="flex gap-2 overflow-x-auto no-scrollbar" id="imageSlotsContainer">
                 <div class="image-slot" onclick="triggerUpload(0)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 0)"></div>
                 <div class="image-slot" onclick="triggerUpload(1)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 1)"></div>
                 <div class="image-slot" onclick="triggerUpload(2)"><i class="fa-solid fa-plus text-gray-600"></i><input type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event, 2)"></div>
@@ -62,23 +62,23 @@
         </div>
 
         <div class="flex items-end gap-2 bg-[#1C1C1E] p-1.5 pl-2 rounded-full border border-gray-700/50 focus-within:border-gray-500">
-            <button id="toggleSettingsBtn" class="w-9 h-9 flex items-center justify-center text-gray-400 bg-gray-800/40 rounded-full"><i class="fa-solid fa-sliders text-sm"></i></button>
-            <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white" placeholder="صف الصورة التي تريدها..."></textarea>
-            <button id="sendBtn" class="bg-white text-black rounded-full w-9 h-9 flex-shrink-0 flex items-center justify-center opacity-40 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+            <button id="toggleSettingsBtn" class="w-8 md:w-9 h-8 md:h-9 flex items-center justify-center text-gray-400 bg-gray-800/40 rounded-full flex-shrink-0"><i class="fa-solid fa-sliders text-xs md:text-sm"></i></button>
+            <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs md:text-sm py-2 text-white" placeholder="صف الصورة التي تريدها..."></textarea>
+            <button id="sendBtn" class="bg-white text-black rounded-full w-8 md:w-9 h-8 md:h-9 flex-shrink-0 flex items-center justify-center opacity-40 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs md:text-sm"></i></button>
         </div>
         
         <div id="optionsArea" class="collapsed mt-3 flex flex-col gap-3 px-1">
-            <div class="flex gap-2">
-                <button id="openModelSelect" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2.5 flex flex-col items-start">
+            <div class="flex flex-col md:flex-row gap-2">
+                <button id="openModelSelect" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2 md:p-2.5 flex flex-col items-start">
                     <span class="text-[9px] text-gray-500 font-bold">النموذج</span>
-                    <span id="selectedModelLabel" class="font-bold text-xs">flux</span>
+                    <span id="selectedModelLabel" class="font-bold text-xs md:text-sm">flux</span>
                 </button>
                 <div id="ratioContainer" class="flex-1 bg-gray-800/40 border border-gray-700 rounded-xl p-2 flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
             </div>
             
             <div class="flex flex-col gap-1.5">
                 <span class="text-[9px] text-gray-500 font-bold px-1">عدد الصور</span>
-                <div id="countContainer" class="flex bg-gray-800/40 border border-gray-700 rounded-xl p-1 gap-1">
+                <div id="countContainer" class="flex bg-gray-800/40 border border-gray-700 rounded-xl p-1 gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar">
                     <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-black" data-count="1">1x</button>
                     <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400" data-count="2">2x</button>
                     <button class="count-btn flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400" data-count="3">3x</button>
@@ -86,26 +86,26 @@
                 </div>
             </div>
 
-            <button id="closeOptionsBtn" class="w-full py-1.5 text-gray-500 bg-zinc-900 rounded-lg"><i class="fa-solid fa-chevron-down text-xs"></i> إخفاء الإعدادات</button>
+            <button id="closeOptionsBtn" class="w-full py-1.5 text-gray-500 bg-zinc-900 rounded-lg text-xs md:text-sm"><i class="fa-solid fa-chevron-down text-xs"></i> إخفاء الإعدادات</button>
         </div>
     </div>
 </div>
 
 <div id="modelSelectModal" class="fixed inset-0 bg-black/60 z-50 opacity-0 pointer-events-none backdrop-blur-sm transition-opacity">
     <div class="absolute inset-0" id="modalBackdrop"></div>
-    <div id="modelSelectContent" class="absolute bottom-0 left-0 right-0 bg-[#161618] p-6 rounded-t-[32px] border-t border-gray-800">
-        <h3 class="font-bold text-xs mb-4 text-center text-gray-300">نماذج توليد الصور</h3>
+    <div id="modelSelectContent" class="absolute bottom-0 left-0 right-0 bg-[#161618] p-4 md:p-6 rounded-t-[32px] border-t border-gray-800 max-h-[80vh] overflow-y-auto">
+        <h3 class="font-bold text-xs md:text-sm mb-4 text-center text-gray-300">نماذج توليد الصور</h3>
         <div class="space-y-2">
-            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="flux">
-                <span class="font-bold text-sm text-white">flux</span>
+            <div class="model-item p-3 md:p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="flux">
+                <span class="font-bold text-xs md:text-sm text-white">flux</span>
                 <i class="fa-solid fa-bolt text-amber-500 text-xs"></i>
             </div>
-            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="gpt-image-2">
-                <span class="font-bold text-sm text-white">gpt-image-2</span>
+            <div class="model-item p-3 md:p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="gpt-image-2">
+                <span class="font-bold text-xs md:text-sm text-white">gpt-image-2</span>
                 <i class="fa-solid fa-brain text-blue-500 text-xs"></i>
             </div>
-            <div class="model-item p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="nanobanana-2">
-                <span class="font-bold text-sm text-white">nanobanana-2</span>
+            <div class="model-item p-3 md:p-4 bg-zinc-900 rounded-xl cursor-pointer flex justify-between items-center" data-model="nanobanana-2">
+                <span class="font-bold text-xs md:text-sm text-white">nanobanana-2</span>
                 <i class="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs"></i>
             </div>
         </div>
@@ -143,12 +143,12 @@
     const ratioContainer = document.getElementById('ratioContainer');
     ratios.forEach(r => {
         const btn = document.createElement('button');
-        btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap ${r === selectedRatio ? 'bg-white text-black' : 'text-gray-400'}`;
+        btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap font-bold ${r === selectedRatio ? 'bg-white text-black' : 'text-gray-400'}`;
         btn.textContent = r;
         btn.onclick = () => {
             selectedRatio = r;
-            Array.from(ratioContainer.children).forEach(b => b.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap text-gray-400`);
-            btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap bg-white text-black`;
+            Array.from(ratioContainer.children).forEach(b => b.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap font-bold text-gray-400`);
+            btn.className = `px-2 py-1 rounded text-[10px] whitespace-nowrap font-bold bg-white text-black`;
         };
         ratioContainer.appendChild(btn);
     });
@@ -222,13 +222,13 @@
         // Create skeleton loaders for the requested count
         for (let i = 0; i < selectedCount; i++) {
             const card = document.createElement('div');
-            card.className = "bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-tl-none w-full space-y-3";
+            card.className = "bg-zinc-900 border border-zinc-800 p-3 md:p-4 rounded-2xl rounded-tl-none w-full space-y-3";
             card.innerHTML = `
                 <div class="w-full rounded-xl bg-black aspect-square flex flex-col items-center justify-center relative overflow-hidden">
-                    <div class="loader flex flex-col items-center"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">جاري التوليد ${selectedCount > 1 ? (i+1) : ''}...</p></div>
+                    <div class="loader flex flex-col items-center"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs md:text-sm">جاري التوليد ${selectedCount > 1 ? (i+1) : ''}...</p></div>
                     <img class="hidden w-full h-full object-contain result-img">
                 </div>
-                <div class="success-actions hidden flex justify-center"><button class="bg-white text-black px-4 py-2 rounded-lg text-xs font-bold download-btn">تحميل الصورة</button></div>
+                <div class="success-actions hidden flex justify-center"><button class="bg-white text-black px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold download-btn">تحميل الصورة</button></div>
             `;
             resultsContainer.appendChild(card);
         }

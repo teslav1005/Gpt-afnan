@@ -10,45 +10,54 @@
     <style>
         :root { --app-bg: #050505; --sheet-bg: #121214; --sidebar-bg: #0d0d0f; }
         body { font-family: 'Cairo', sans-serif; background-color: var(--app-bg); color: #fff; margin: 0; padding: 0; overflow: hidden; }
-        .app-container { max-width: 480px; margin: 0 auto; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
+        .app-container { width: 100%; height: 100dvh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth; }
-        #floatingBottomSheet { position: absolute; bottom: 10px; left: 10px; right: 10px; background-color: var(--sheet-bg); border-radius: 24px; padding: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 20; }
-        textarea { resize: none; overflow-y: auto; min-height: 24px; max-height: 100px; line-height: 1.4; }
-        #sidebarDrawer { position: fixed; top: 0; right: -100%; width: 75%; max-width: 320px; height: 100%; background-color: var(--sidebar-bg); z-index: 50; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255, 255, 255, 0.08); }
+        #workspaceArea { flex: 1; overflow-y: auto; padding-bottom: clamp(80px, 15vw, 200px); scroll-behavior: smooth; }
+        #floatingBottomSheet { position: absolute; bottom: clamp(5px, 2vw, 15px); left: clamp(5px, 2vw, 15px); right: clamp(5px, 2vw, 15px); background-color: var(--sheet-bg); border-radius: clamp(16px, 4vw, 28px); padding: clamp(8px, 2vw, 15px); box-shadow: 0 20px 50px rgba(0,0,0,0.9); z-index: 20; }
+        textarea { resize: none; overflow-y: auto; min-height: 24px; max-height: 100px; line-height: 1.4; font-size: clamp(12px, 2vw, 16px); }
+        #sidebarDrawer { position: fixed; top: 0; right: -100%; width: min(75%, 400px); height: 100%; background-color: var(--sidebar-bg); z-index: 50; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255, 255, 255, 0.08); overflow-y: auto; }
         #sidebarDrawer.open { right: 0; }
         #sidebarOverlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         #sidebarOverlay.show { opacity: 1; pointer-events: auto; }
-        .preview-slot { width: 50px; height: 50px; border-radius: 8px; background-size: cover; background-position: center; position: relative; border: 1px solid rgba(255,255,255,0.2); }
+        .preview-slot { width: clamp(40px, 8vw, 60px); height: clamp(40px, 8vw, 60px); border-radius: 8px; background-size: cover; background-position: center; position: relative; border: 1px solid rgba(255,255,255,0.2); }
         .model-item { transition: all 0.2s ease; cursor: pointer; }
         .model-item:hover, .model-item.active { background-color: rgba(255, 255, 255, 0.08); }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .chat-history-item { position: relative; transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; border: 1px solid transparent; padding: 8px 12px; }
+        .chat-history-item { position: relative; transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; border: 1px solid transparent; padding: clamp(6px, 1.5vw, 12px); }
         .chat-history-item.active { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
         .chat-history-item:hover .item-actions { opacity: 1; }
         .item-actions { opacity: 0; transition: opacity 0.2s; }
         .pinned-badge { color: #f59e0b; font-size: 8px; }
+        
+        /* Desktop Layout */
+        @media (min-width: 1024px) {
+            .app-container { flex-direction: row; }
+            #sidebarDrawer { position: static; right: auto; width: 320px; height: 100%; border-left: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0; }
+            #sidebarOverlay { display: none; }
+            .main-content { flex: 1; display: flex; flex-direction: column; }
+            #workspaceArea { padding-bottom: clamp(100px, 12vw, 180px); }
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div id="sidebarOverlay"></div>
-    <div id="sidebarDrawer" class="flex flex-col justify-between p-4">
-        <div class="flex flex-col h-[85%] space-y-4">
+    <div id="sidebarDrawer" class="flex flex-col justify-between p-3 md:p-4 lg:p-4">
+        <div class="flex flex-col h-[85%] space-y-3 md:space-y-4">
             <div class="flex justify-between items-center pb-2 border-b border-white/5">
                 <span class="text-xs font-bold text-gray-400">المحادثات السابقة</span>
-                <button id="closeSidebarBtn" class="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center bg-zinc-900 rounded-full"><i class="fa-solid fa-xmark text-xs"></i></button>
+                <button id="closeSidebarBtn" class="text-gray-400 hover:text-white w-7 h-7 flex items-center justify-center bg-zinc-900 rounded-full lg:hidden"><i class="fa-solid fa-xmark text-xs"></i></button>
             </div>
-            <button id="sidebarNewChatBtn" class="w-full bg-white text-black hover:bg-gray-200 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-plus text-xs"></i> محادثة جديدة</button>
+            <button id="sidebarNewChatBtn" class="w-full bg-white text-black hover:bg-gray-200 py-2 md:py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-plus text-xs"></i> محادثة جديدة</button>
             
             <div id="chatHistory" class="flex-1 overflow-y-auto no-scrollbar space-y-1 py-2">
                 <!-- History items will be injected here -->
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
-                <a href="Image.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-regular fa-image text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الصور</span></a>
-                <a href="Video.html" class="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-solid fa-clapperboard text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الفيديو</span></a>
+                <a href="Image.html" class="flex flex-col items-center justify-center p-2 md:p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-regular fa-image text-base md:text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الصور</span></a>
+                <a href="Video.html" class="flex flex-col items-center justify-center p-2 md:p-3 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-white/20 transition group"><i class="fa-solid fa-clapperboard text-base md:text-lg text-gray-400 group-hover:text-white mb-1"></i><span class="text-[10px] font-bold text-gray-400 group-hover:text-white">توليد الفيديو</span></a>
             </div>
 
             <div class="pt-2 border-t border-white/5 text-[10px] text-gray-500 text-center">
@@ -56,73 +65,78 @@
             </div>
         </div>
         <div class="pt-4 border-t border-white/5 flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-white font-bold text-xs">U</div>
-            <div class="flex flex-col"><span class="text-xs font-bold text-white">الحساب الشخصي</span><span class="text-[9px] text-gray-500">مطور برمجيات</span></div>
-            <i class="fa-solid fa-gear text-gray-500 text-xs mr-auto cursor-pointer hover:text-white"></i>
+            <div class="w-8 md:w-9 h-8 md:h-9 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-white font-bold text-xs">U</div>
+            <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-xs font-bold text-white truncate">الحساب الشخصي</span>
+                <span class="text-[9px] text-gray-500 truncate">مطور برمجيات</span>
+            </div>
+            <i class="fa-solid fa-gear text-gray-500 text-xs cursor-pointer hover:text-white flex-shrink-0"></i>
         </div>
     </div>
-    
-    <header class="z-30 backdrop-blur-md bg-black/40 sticky top-0 border-b border-white/5">
-        <div class="flex justify-between items-center p-4">
-            <button id="menuBtn" class="text-white hover:text-gray-300 w-9 h-9 flex items-center justify-center bg-zinc-900 rounded-full transition active:scale-90"><i class="fa-solid fa-bars text-sm"></i></button>
-            <div id="modelTrigger" class="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-200 hover:text-white select-none py-1.5 px-3 rounded-full bg-zinc-900/40 border border-white/5 active:scale-95 transition">
-                <span id="activeModelDisplay">deepseek-v4-flash</span><i id="dropdownArrow" class="fa-solid fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200"></i>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <button id="headerNewChatBtn" class="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center bg-zinc-900/50 rounded-full transition"><i class="fa-solid fa-circle-plus text-xs"></i></button>
-            </div>
-        </div>
-        <div id="modelsDropdown" class="hidden absolute top-full left-4 right-4 bg-[#141417]/95 backdrop-blur-lg border border-white/10 rounded-2xl p-2 mt-1.5 shadow-2xl z-50 max-h-[350px] overflow-y-auto no-scrollbar">
-            <div class="space-y-1" id="dropdownModelsList">
-                <div class="model-item active p-3 rounded-xl flex flex-col" data-model="deepseek-v4-flash">
-                    <span class="text-xs font-bold text-white">deepseek-v4-flash</span>
-                    <span class="text-[9px] text-gray-500">النموذج الرئيسي السريع</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="deepseek-v4-pro">
-                    <span class="text-xs font-bold text-gray-400">deepseek-v4-pro</span>
-                    <span class="text-[9px] text-gray-600">الأداء الأقوى</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="minimax-m2.7">
-                    <span class="text-xs font-bold text-gray-400">minimax-m2.7</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="claude-4.8">
-                    <span class="text-xs font-bold text-gray-400">claude-4.8</span>
-                    <span class="text-[9px] text-gray-600">Claude Large</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="gemini-3.1-pro">
-                    <span class="text-xs font-bold text-gray-400">gemini-3.1-pro</span>
-                    <span class="text-[9px] text-gray-600">Gemini Large</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="kimi-2.7">
-                    <span class="text-xs font-bold text-gray-400">kimi-2.7</span>
-                    <span class="text-[9px] text-gray-600">Kimi Code</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="gpt-5.5">
-                    <span class="text-xs font-bold text-gray-400">gpt-5.5</span>
-                    <span class="text-[9px] text-gray-600">OpenAI Large</span>
-                </div>
-                <div class="model-item p-3 rounded-xl flex flex-col" data-model="perplexity-reasoning">
-                    <span class="text-xs font-bold text-gray-400">perplexity-reasoning</span>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <main id="workspaceArea" class="p-4 no-scrollbar">
-        <div id="welcomeSection" class="flex flex-col items-center justify-center text-center py-16 px-4 space-y-3">
-            <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-xl text-white"><i class="fa-regular fa-comment-dots"></i></div>
-            <h2 class="text-sm font-bold text-white">استوديو الدردشة الذكي</h2>
-            <p class="text-[11px] text-gray-500 max-w-[280px] leading-relaxed">النموذج النشط حالياً: <span id="welcomeModelDisplay" class="text-white font-bold">deepseek-v4-flash</span></p>
-        </div>
-        <div id="chatSection" class="hidden space-y-4 mt-2 pb-4"></div>
-    </main>
+    <div class="main-content flex-1 flex flex-col lg:flex-1">
+        <header class="z-30 backdrop-blur-md bg-black/40 sticky top-0 border-b border-white/5">
+            <div class="flex justify-between items-center p-3 md:p-4">
+                <button id="menuBtn" class="text-white hover:text-gray-300 w-8 md:w-9 h-8 md:h-9 flex items-center justify-center bg-zinc-900 rounded-full transition active:scale-90 lg:hidden"><i class="fa-solid fa-bars text-sm"></i></button>
+                <div id="modelTrigger" class="flex items-center gap-1.5 cursor-pointer text-xs md:text-sm font-bold text-gray-200 hover:text-white select-none py-1.5 px-2 md:px-3 rounded-full bg-zinc-900/40 border border-white/5 active:scale-95 transition">
+                    <span id="activeModelDisplay" class="truncate">deepseek-v4-flash</span><i id="dropdownArrow" class="fa-solid fa-chevron-down text-[9px] text-gray-400 transition-transform duration-200 flex-shrink-0"></i>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button id="headerNewChatBtn" class="text-gray-400 hover:text-white w-8 md:w-9 h-8 md:h-9 flex items-center justify-center bg-zinc-900/50 rounded-full transition"><i class="fa-solid fa-circle-plus text-xs md:text-sm"></i></button>
+                </div>
+            </div>
+            <div id="modelsDropdown" class="hidden absolute top-full left-3 md:left-4 right-3 md:right-4 bg-[#141417]/95 backdrop-blur-lg border border-white/10 rounded-2xl p-2 mt-1.5 shadow-2xl z-50 max-h-[350px] overflow-y-auto no-scrollbar">
+                <div class="space-y-1" id="dropdownModelsList">
+                    <div class="model-item active p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="deepseek-v4-flash">
+                        <span class="font-bold text-white">deepseek-v4-flash</span>
+                        <span class="text-[9px] text-gray-500">النموذج الرئيسي السريع</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="deepseek-v4-pro">
+                        <span class="font-bold text-gray-400">deepseek-v4-pro</span>
+                        <span class="text-[9px] text-gray-600">الأداء الأقوى</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="minimax-m2.7">
+                        <span class="font-bold text-gray-400">minimax-m2.7</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="claude-4.8">
+                        <span class="font-bold text-gray-400">claude-4.8</span>
+                        <span class="text-[9px] text-gray-600">Claude Large</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="gemini-3.1-pro">
+                        <span class="font-bold text-gray-400">gemini-3.1-pro</span>
+                        <span class="text-[9px] text-gray-600">Gemini Large</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="kimi-2.7">
+                        <span class="font-bold text-gray-400">kimi-2.7</span>
+                        <span class="text-[9px] text-gray-600">Kimi Code</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="gpt-5.5">
+                        <span class="font-bold text-gray-400">gpt-5.5</span>
+                        <span class="text-[9px] text-gray-600">OpenAI Large</span>
+                    </div>
+                    <div class="model-item p-3 rounded-xl flex flex-col text-xs md:text-sm" data-model="perplexity-reasoning">
+                        <span class="font-bold text-gray-400">perplexity-reasoning</span>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-    <div id="floatingBottomSheet" class="flex flex-col gap-2">
-        <div id="attachmentPreviewArea" class="hidden flex gap-2 overflow-x-auto no-scrollbar pb-1 px-1 border-b border-white/5 mb-1"></div>
-        <div class="flex items-end gap-2 bg-[#1C1C1E] p-1.5 pl-2 rounded-full border border-gray-700/50 focus-within:border-gray-500 transition-colors relative">
-            <button id="attachBtn" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white rounded-full transition flex-shrink-0 bg-gray-800/40 active:scale-90"><i class="fa-solid fa-plus text-sm"></i></button>
-            <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs py-2 text-white placeholder-gray-500" placeholder="اسأل أو اكتب ما تريد هنا..."></textarea>
-            <button id="sendBtn" class="bg-white text-black rounded-full w-9 h-9 flex-shrink-0 flex items-center justify-center opacity-40 transition-all duration-300 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs translate-x-[-1px] translate-y-[1px]"></i></button>
+        <main id="workspaceArea" class="p-3 md:p-4 no-scrollbar">
+            <div id="welcomeSection" class="flex flex-col items-center justify-center text-center py-12 md:py-16 px-4 space-y-3">
+                <div class="w-10 md:w-12 h-10 md:h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-lg md:text-xl text-white"><i class="fa-regular fa-comment-dots"></i></div>
+                <h2 class="text-sm md:text-base font-bold text-white">استوديو الدردشة الذكي</h2>
+                <p class="text-[11px] md:text-xs text-gray-500 max-w-[280px] leading-relaxed">النموذج النشط حالياً: <span id="welcomeModelDisplay" class="text-white font-bold">deepseek-v4-flash</span></p>
+            </div>
+            <div id="chatSection" class="hidden space-y-4 mt-2 pb-4"></div>
+        </main>
+
+        <div id="floatingBottomSheet" class="flex flex-col gap-2">
+            <div id="attachmentPreviewArea" class="hidden flex gap-2 overflow-x-auto no-scrollbar pb-1 px-1 border-b border-white/5 mb-1"></div>
+            <div class="flex items-end gap-2 bg-[#1C1C1E] p-1.5 pl-2 rounded-full border border-gray-700/50 focus-within:border-gray-500 transition-colors relative">
+                <button id="attachBtn" class="w-8 md:w-9 h-8 md:h-9 flex items-center justify-center text-gray-400 hover:text-white rounded-full transition flex-shrink-0 bg-gray-800/40 active:scale-90"><i class="fa-solid fa-plus text-xs md:text-sm"></i></button>
+                <textarea id="promptInput" rows="1" class="bg-transparent w-full outline-none text-xs md:text-sm py-2 text-white placeholder-gray-500" placeholder="اسأل أو اكتب ما تريد هنا..."></textarea>
+                <button id="sendBtn" class="bg-white text-black rounded-full w-8 md:w-9 h-8 md:h-9 flex-shrink-0 flex items-center justify-center opacity-40 transition-all duration-300 pointer-events-none"><i class="fa-solid fa-paper-plane text-xs md:text-sm translate-x-[-1px] translate-y-[1px]"></i></button>
+            </div>
         </div>
     </div>
 </div>
@@ -212,7 +226,7 @@
             };
             
             item.innerHTML = `
-                <div class="flex items-center gap-2 overflow-hidden flex-1">
+                <div class="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                     <i class="fa-regular fa-message text-[10px] text-gray-500 flex-shrink-0"></i>
                     <span class="text-[11px] font-bold text-gray-300 truncate">${chat.title} ${chat.pinned ? '<i class="fa-solid fa-thumbtack pinned-badge ml-1"></i>' : ''}</span>
                 </div>
@@ -407,12 +421,12 @@
         if (files && files.length > 0) {
             files.forEach(f => {
                 if (f.type && f.type.startsWith('image/')) {
-                    content += `<img src="${f.data}" class="max-w-[200px] rounded-lg mb-2 block">`;
+                    content += `<img src="${f.data}" class="max-w-full md:max-w-[300px] rounded-lg mb-2 block h-auto">`;
                 }
             });
         }
         if (text) {
-            content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap break-words">${text}</div>`;
+            content += `<div class="${sender === 'user' ? 'bg-white text-black' : 'bg-zinc-900 border border-white/5'} p-2 md:p-3 rounded-2xl text-xs md:text-sm max-w-[85%] md:max-w-[70%] lg:max-w-[50%] leading-relaxed whitespace-pre-wrap break-words">${text}</div>`;
         }
         div.innerHTML = `<div class="flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}">${content}</div>`;
         chatSection.appendChild(div);
@@ -421,7 +435,7 @@
     function appendLoading() {
         const div = document.createElement('div');
         div.className = "flex justify-start fade-in mb-4";
-        div.innerHTML = `<div class="bg-zinc-900 p-3 rounded-2xl text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري التفكير...</div>`;
+        div.innerHTML = `<div class="bg-zinc-900 p-2 md:p-3 rounded-2xl text-xs md:text-sm text-gray-400"><i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري التفكير...</div>`;
         chatSection.appendChild(div);
         return div;
     }
